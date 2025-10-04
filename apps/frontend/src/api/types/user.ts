@@ -1,6 +1,6 @@
 export interface User {
   readonly id: string;
   readonly email: string;
-  readonly isDeleted: boolean;
+  readonly role: string;
   readonly createdAt: string;
 }

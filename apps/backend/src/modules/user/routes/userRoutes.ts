@@ -21,8 +21,7 @@ import { UserRepositoryImpl } from '../infrastructure/repositories/userRepositor
 const userSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   email: Type.String({ minLength: 1, maxLength: 255, format: 'email' }),
-  isDeleted: Type.Boolean(),
-  createdAt: Type.String({ format: 'date-time' }),
+  role: Type.String({ minLength: 1, maxLength: 10 }),
 });
 
 export async function userRoutes(
@@ -44,8 +43,7 @@ export async function userRoutes(
     const userResponse: Static<typeof userSchema> = {
       id: user.id,
       email: user.email,
-      isDeleted: user.isDeleted,
-      createdAt: user.createdAt.toISOString(),
+      role: user.role,
     };
 
     return userResponse;
@@ -143,6 +141,7 @@ export async function userRoutes(
     schema: {
       response: {
         200: Type.Object({ accessToken: Type.String() }),
+        401: Type.Null(),
       },
     },
     handler: async (request, reply) => {
