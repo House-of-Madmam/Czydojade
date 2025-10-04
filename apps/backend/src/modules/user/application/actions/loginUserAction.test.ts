@@ -63,10 +63,12 @@ describe('LoginUserAction', () => {
       const decodedAccess = tokenService.verifyAccessToken(result.accessToken);
       expect(decodedAccess.userId).toBe(user.id);
       expect(decodedAccess.email).toBe(user.email);
+      expect(decodedAccess.role).toBe(user.role);
 
       const decodedRefresh = tokenService.verifyRefreshToken(result.refreshToken);
       expect(decodedRefresh.userId).toBe(user.id);
       expect(decodedRefresh.email).toBe(user.email);
+      expect(decodedRefresh.role).toBe(user.role);
     });
 
     it('throws UnauthorizedAccessError when user does not exist', async () => {
@@ -87,22 +89,6 @@ describe('LoginUserAction', () => {
         loginUserAction.execute({
           email: userData.email,
           password: 'wrongpassword',
-        }),
-      ).rejects.toThrow(UnauthorizedAccessError);
-    });
-
-    it('throws UnauthorizedAccessError when user is deleted', async () => {
-      const password = Generator.password();
-
-      const userData = Generator.userData({ password: await passwordService.hashPassword(Generator.password()) });
-
-      const user = await userRepository.create(userData);
-      await userRepository.markAsDeleted(user.id);
-
-      await expect(
-        loginUserAction.execute({
-          email: userData.email,
-          password,
         }),
       ).rejects.toThrow(UnauthorizedAccessError);
     });

@@ -49,13 +49,6 @@ export class LoginUserAction {
       });
     }
 
-    if (user.isDeleted) {
-      throw new UnauthorizedAccessError({
-        reason: 'Account has been deleted',
-        email: normalizedEmail,
-      });
-    }
-
     const isPasswordValid = await this.passwordService.comparePasswords(loginData.password, user.password);
 
     if (!isPasswordValid) {
@@ -65,7 +58,7 @@ export class LoginUserAction {
       });
     }
 
-    const payload = { userId: user.id, email: user.email };
+    const payload = { userId: user.id, email: user.email, role: user.role };
 
     const accessToken = this.tokenService.generateAccessToken(payload);
     const refreshToken = this.tokenService.generateRefreshToken(payload);
