@@ -15,6 +15,13 @@
       "when": 1759612905400,
       "tag": "0001_groovy_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1759619902541,
+      "tag": "0002_faulty_retro_girl",
+      "breakpoints": true
     }
   ]
 }
