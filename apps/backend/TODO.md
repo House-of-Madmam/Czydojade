@@ -21,3 +21,17 @@
 
 - powiadomienia push dla subskrypcji, SNS lub inny mechanizm, dostarczanie w różnej formie (email, push, sms - do rozważenia)
 - zamykanie, otwieranie incydentów przez admina
+
+## Endpointy
+
+- GET /lines - lista linii, filtry: typ, nazwa (czyli numer)
+- GET /stops - lista przystanków filtry: typ, nazwa, lat/lon + promień
+- GET /lines/{line_id}/stops - lista przystanków na linii
+- GET /incidents - lista incydentów, filtry: linia, przystanek, aktywne, priorytet
+- POST /incidents - dodanie incydentu
+- POST /incidents/{incident_id}/vote - głosowanie na incydent
+- POST /subscriptions/line - dodanie subskrypcji linii
+- POST /subscriptions/area - dodanie subskrypcji obszaru
+- GET /subscriptions/line - lista subskrypcji linii użytkownika
+- GET /subscriptions/area - lista subskrypcji obszaru użytkownika
+- DELETE /subscriptions/{subscription_id} - usunięcie subskrypcji
