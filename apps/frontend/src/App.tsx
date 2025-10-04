@@ -9,6 +9,8 @@ import { TooltipProvider } from './components/ui/Tooltip.tsx';
 import PrivateRoute from './auth/privateRoute.tsx';
 import LogoutPage from './pages/LogoutPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
+import { Provider as ReduxProvider } from 'react-redux';
+import { store } from './store/store.ts';
 
 const router = createBrowserRouter([
   {
@@ -38,13 +40,15 @@ const router = createBrowserRouter([
 function App() {
   return (
     <StrictMode>
-      <CookiesProvider>
-        <AuthContextProvider>
-          <TooltipProvider>
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </AuthContextProvider>
-      </CookiesProvider>
+      <ReduxProvider store={store}>
+        <CookiesProvider>
+          <AuthContextProvider>
+            <TooltipProvider>
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </AuthContextProvider>
+        </CookiesProvider>
+      </ReduxProvider>
     </StrictMode>
   );
 }
