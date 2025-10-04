@@ -274,7 +274,7 @@ export class HttpServer {
 
     this.fastifyServer.get('/health', async (_request, reply) => {
       reply.send({
-        status: 'ok',
+        healthy: true,
       });
     });
   }
