@@ -1,6 +1,7 @@
 {
   "name": "czydojade",
   "scripts": {
+    "dev": "concurrently --names=frontend,backend --prefix-colors=blue,green \"npm run dev --workspace=apps/frontend\" \"npm run dev --workspace=apps/backend\"",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "test": "turbo run test:ci --concurrency 5",
@@ -10,6 +11,8 @@
   "devDependencies": {
     "@stylistic/eslint-plugin": "5.4.0",
     "@types/node": "24.5.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "eslint": "9.36.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-perfectionist": "4.15.0",
@@ -31,7 +34,7 @@
   ],
   "packageManager": "npm@11.6.1",
   "dependencies": {
-    "drizzle-kit": "^0.31.5",
+    "drizzle-kit": "^0.18.1",
     "drizzle-orm": "^0.44.6"
   }
 }
