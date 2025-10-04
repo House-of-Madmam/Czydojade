@@ -20,13 +20,13 @@ const stopSchema = Type.Object({
 
 type StopResponse = Static<typeof stopSchema>;
 
-type TransportOpsRoutesOptions = {
+type TransportRoutesOptions = {
   database: Database;
 };
 
-export async function transportOpsRoutes(
+export async function transportRoutes(
   fastify: FastifyInstance<any, any, any, any, TypeBoxTypeProvider>,
-  { database }: TransportOpsRoutesOptions,
+  { database }: TransportRoutesOptions,
 ): Promise<void> {
   const stopRepository = new StopRepositoryImpl(database);
   const listStopsAction = new ListStopsAction(stopRepository);
