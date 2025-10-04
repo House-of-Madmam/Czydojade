@@ -6,6 +6,7 @@ import Root from './pages/Root';
 import { CookiesProvider } from 'react-cookie';
 import HomePage from './pages/HomePage.tsx';
 import AboutPage from './pages/AboutPage.tsx';
+import TravelPage from './pages/TravelPage.tsx';
 import { TooltipProvider } from './components/ui/Tooltip.tsx';
 import PrivateRoute from './auth/privateRoute.tsx';
 import LogoutPage from './pages/LogoutPage.tsx';
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
       {
         path: '/about',
         element: <AboutPage />,
+      },
+      {
+        path: '/travel',
+        element: <TravelPage />,
       },
       {
         path: '/login',

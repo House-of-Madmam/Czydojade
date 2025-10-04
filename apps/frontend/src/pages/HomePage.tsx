@@ -20,9 +20,12 @@ export default function HomePage() {
             Sprawdź czy dojedziesz
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <button className="px-10 py-4 bg-white text-gray-800 rounded-lg hover:bg-gray-100 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105">
+            <Link 
+              to="/travel"
+              className="px-10 py-4 bg-white text-gray-800 rounded-lg hover:bg-gray-100 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 text-center"
+            >
               Rozpocznij podróż
-            </button>
+            </Link>
             <Link 
               to="/about"
               className="px-10 py-4 border-2 border-white text-white rounded-lg hover:bg-white hover:text-gray-800 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 text-center"
