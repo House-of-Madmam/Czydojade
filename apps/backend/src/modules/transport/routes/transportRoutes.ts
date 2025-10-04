@@ -6,7 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Database } from '../../../infrastructure/database/database.ts';
 import { ListStopsAction } from '../application/actions/listStopsAction.ts';
 import type { ListStopsFilters, PaginatedStops } from '../domain/repositories/stopRepository.ts';
-import type { Stop } from '../domain/types/stop.ts';
+import { stopTypes, type Stop } from '../domain/types/stop.ts';
 import { StopRepositoryImpl } from '../infrastructure/repositories/stopRepositoryImpl.ts';
 
 const stopTypeSchema = Type.Union([Type.Literal('bus'), Type.Literal('tram')]);
@@ -46,7 +46,7 @@ export async function transportRoutes(
         longitude: Type.Optional(Type.Number()),
         radiusMeters: Type.Optional(Type.Integer({ minimum: 1 })),
         page: Type.Optional(Type.Integer({ minimum: 1, default: 1 })),
-        pageSize: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 5 })),
+        pageSize: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
       }),
       response: {
         200: paginatedStopsResponseSchema,
@@ -55,11 +55,11 @@ export async function transportRoutes(
     handler: async (request, reply) => {
       const query = request.query as ListStopsFilters;
 
-      // Apply defaults at API layer
       const filters: ListStopsFilters = {
         ...query,
         page: query.page ?? 1,
-        pageSize: query.pageSize ?? 5,
+        pageSize: query.pageSize ?? 10,
+        type: query.type ?? stopTypes.tram,
       };
 
       const paginatedStops: PaginatedStops = await listStopsAction.execute(filters);
