@@ -1,6 +1,5 @@
 import { boolean, decimal, index, integer, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
-// Enums
 export const vehicleTypeEnum = pgEnum('vehicle_type', ['bus', 'tram']);
 export const stopTypeEnum = pgEnum('stop_type', ['bus', 'tram']);
 export const incidentTypeEnum = pgEnum('incident_type', ['breakdown', 'danger']);
@@ -11,7 +10,7 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   password: text('password').notNull(),
-  role: varchar('role', { length: 20 }).notNull().default('user'), // 'user' | 'admin'
+  role: varchar('role', { length: 10 }).notNull().default('user'), // 'user' | 'admin'
 });
 
 export const blacklistedTokens = pgTable('blacklisted_tokens', {
