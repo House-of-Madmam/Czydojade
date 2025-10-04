@@ -4,12 +4,24 @@ import { Type, type Static } from '@sinclair/typebox';
 import type { FastifyInstance } from 'fastify';
 
 import type { Database } from '../../../infrastructure/database/database.ts';
+import { ListLinesAction } from '../application/actions/listLinesAction.ts';
 import { ListStopsAction } from '../application/actions/listStopsAction.ts';
+import type { LineRepository, ListLinesFilters, PaginatedLines } from '../domain/repositories/lineRepository.ts';
 import type { ListStopsFilters, PaginatedStops } from '../domain/repositories/stopRepository.ts';
+import type { Line } from '../domain/types/line.ts';
 import { stopTypes, type Stop } from '../domain/types/stop.ts';
+import { LineRepositoryImpl } from '../infrastructure/repositories/lineRepositoryImpl.ts';
 import { StopRepositoryImpl } from '../infrastructure/repositories/stopRepositoryImpl.ts';
 
-const stopTypeSchema = Type.Union([Type.Literal('bus'), Type.Literal('tram')]);
+const vehicleTypeSchema = Type.Union([Type.Literal('bus'), Type.Literal('tram')]);
+const stopTypeSchema = vehicleTypeSchema;
+
+const lineSchema = Type.Object({
+  id: Type.String({ format: 'uuid' }),
+  number: Type.String({ minLength: 1, maxLength: 50 }),
+  type: vehicleTypeSchema,
+  directions: Type.Array(Type.String()),
+});
 
 const stopSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
@@ -19,11 +31,17 @@ const stopSchema = Type.Object({
   type: stopTypeSchema,
 });
 
+const paginatedLinesResponseSchema = Type.Object({
+  data: Type.Array(lineSchema),
+  total: Type.Integer({ minimum: 0 }),
+});
+
 const paginatedStopsResponseSchema = Type.Object({
   data: Type.Array(stopSchema),
   total: Type.Integer({ minimum: 0 }),
 });
 
+type LineResponse = Static<typeof lineSchema>;
 type StopResponse = Static<typeof stopSchema>;
 
 type TransportRoutesOptions = {
@@ -36,6 +54,40 @@ export async function transportRoutes(
 ): Promise<void> {
   const stopRepository = new StopRepositoryImpl(database);
   const listStopsAction = new ListStopsAction(stopRepository);
+
+  const lineRepository: LineRepository = new LineRepositoryImpl(database);
+  const listLinesAction = new ListLinesAction(lineRepository);
+
+  fastify.get('/lines', {
+    schema: {
+      querystring: Type.Object({
+        type: Type.Optional(vehicleTypeSchema),
+        number: Type.Optional(Type.String({ minLength: 1, maxLength: 50 })),
+        page: Type.Optional(Type.Integer({ minimum: 1, default: 1 })),
+        pageSize: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+      }),
+      response: {
+        200: paginatedLinesResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const query = request.query as ListLinesFilters;
+
+      const filters: ListLinesFilters = {
+        ...query,
+        page: query.page ?? 1,
+        pageSize: query.pageSize ?? 10,
+      };
+
+      const paginatedLines: PaginatedLines = await listLinesAction.execute(filters);
+      const mappedData: LineResponse[] = paginatedLines.data.map((line: Line) => mapLineToResponse(line));
+
+      return reply.send({
+        data: mappedData,
+        total: paginatedLines.total,
+      });
+    },
+  });
 
   fastify.get('/stops', {
     schema: {
@@ -71,6 +123,15 @@ export async function transportRoutes(
       });
     },
   });
+}
+
+function mapLineToResponse(line: Line): LineResponse {
+  return {
+    id: line.id,
+    number: line.number,
+    type: line.type,
+    directions: line.directions,
+  };
 }
 
 function mapStopToResponse(stop: Stop): StopResponse {

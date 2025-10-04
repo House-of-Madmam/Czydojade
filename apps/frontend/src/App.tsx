@@ -11,6 +11,10 @@ import { TooltipProvider } from './components/ui/Tooltip.tsx';
 import PrivateRoute from './auth/privateRoute.tsx';
 import LogoutPage from './pages/LogoutPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
+import { Provider as ReduxProvider } from 'react-redux';
+import { store } from './store/store.ts';
+import InitializeServices from './components/InitializeServices.ts';
+import IncidentReportPage from './pages/IncidentReportPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -20,6 +24,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: '/incident-report',
+        element: <IncidentReportPage />,
       },
       {
         path: '/about',
@@ -48,13 +56,16 @@ const router = createBrowserRouter([
 function App() {
   return (
     <StrictMode>
-      <CookiesProvider>
-        <AuthContextProvider>
-          <TooltipProvider>
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </AuthContextProvider>
-      </CookiesProvider>
+      <ReduxProvider store={store}>
+        <InitializeServices />
+        <CookiesProvider>
+          <AuthContextProvider>
+            <TooltipProvider>
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </AuthContextProvider>
+        </CookiesProvider>
+      </ReduxProvider>
     </StrictMode>
   );
 }
