@@ -32,7 +32,10 @@
   "packageManager": "npm@11.6.1",
   "dependencies": {
     "cross-env": "^10.1.0",
-    "drizzle-kit": "^0.31.5",
-    "drizzle-orm": "^0.44.6"
+    "drizzle-kit": "^0.18.1",
+    "drizzle-orm": "^0.44.6",
+    "pino": "9.13.1",
+    "react-router-dom": "7.9.3",
+    "vite": "6.3.6"
   }
 }
