@@ -16,7 +16,7 @@ export default function Footer() {
             <div className="h-8 w-8 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">M</span>
             </div>
-            <h2 className="text-xl font-bold">Czydojade</h2>
+            <h2 className="text-xl font-bold">Czy Dojade</h2>
           </Link>
         </div>
 
@@ -80,7 +80,7 @@ export default function Footer() {
 
       <div className="border-t border-slate-700 mt-10 pt-6 text-center">
         <div className="flex items-center justify-center gap-2 text-slate-300 text-sm">
-          <span>© 2025 Czydojade. All rights reserved.</span>
+          <span>© 2025 CzyDojade. All rights reserved.</span>
           <Heart className="h-4 w-4 text-teal-400" />
         </div>
       </div>
