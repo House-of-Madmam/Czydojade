@@ -195,7 +195,6 @@ export async function incidentRoutes(
     },
   });
 
-  // POST /incidents/{incident_id}/vote - głosowanie na incydent
   fastify.post('/incidents/:incidentId/vote', {
     schema: {
       params: Type.Object({

@@ -33,6 +33,7 @@ export const lines = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     number: varchar('number', { length: 50 }).notNull(),
     type: vehicleTypeEnum('type').notNull(),
+    directions: text('directions').array().notNull(),
   },
   (table) => [index('lines_number_type_idx').on(table.number, table.type)],
 );
