@@ -13,6 +13,7 @@ describe('ListLinesAction', () => {
         id: '1c1391b0-4d4e-4db1-8c32-8df1c4f0c5a3',
         number: 'A1',
         type: 'tram',
+        directions: ['northbound', 'southbound'],
       },
     ];
     const expectedResult: PaginatedLines = { data: lines, total: 1 };

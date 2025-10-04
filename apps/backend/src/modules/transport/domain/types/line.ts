@@ -9,4 +9,5 @@ export interface Line {
   readonly id: string;
   readonly number: string;
   readonly type: LineType;
+  readonly directions: string[];
 }

@@ -20,6 +20,7 @@ const lineSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   number: Type.String({ minLength: 1, maxLength: 50 }),
   type: vehicleTypeSchema,
+  directions: Type.Array(Type.String()),
 });
 
 const stopSchema = Type.Object({
@@ -129,6 +130,7 @@ function mapLineToResponse(line: Line): LineResponse {
     id: line.id,
     number: line.number,
     type: line.type,
+    directions: line.directions,
   };
 }
 

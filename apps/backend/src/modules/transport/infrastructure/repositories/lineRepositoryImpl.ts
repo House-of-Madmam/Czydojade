@@ -51,6 +51,7 @@ export class LineRepositoryImpl implements LineRepository {
       id: row.id,
       number: row.number,
       type: row.type,
+      directions: row.directions ?? [],
     };
   }
 }
