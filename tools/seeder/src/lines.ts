@@ -70,7 +70,7 @@ async function seedLines(): Promise<void> {
 
     const uniqueTramLines = new Map<string, ApiRoute>();
     for (const route of tramRoutes) {
-      if (!uniqueTramLines.has(route.shortName)) {
+      if (!uniqueTramLines.has(route.shortName) && route.directions && route.directions.length > 0) {
         uniqueTramLines.set(route.shortName, route);
       }
     }
@@ -93,7 +93,7 @@ async function seedLines(): Promise<void> {
         id: uuidv7(),
         number: route.shortName,
         type: 'bus' as const,
-        directions: route.directions,
+        directions: route.directions && route.directions.length > 0 ? route.directions : [],
       })),
     ];
 
