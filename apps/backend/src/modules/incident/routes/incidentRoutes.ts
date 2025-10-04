@@ -173,8 +173,8 @@ export async function incidentRoutes(
         type: incidentTypes,
         priority: priorities,
         stopId: Type.Optional(Type.String({ format: 'uuid' })),
+        // if stopId is provided, lineId, latitude and longitude are not used
         lineId: Type.Optional(Type.String({ format: 'uuid' })),
-        // if stopId is provided, latitude and longitude are not required
         latitude: Type.Optional(Type.String()),
         longitude: Type.Optional(Type.String()),
       }),
