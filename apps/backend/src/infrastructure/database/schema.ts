@@ -2,15 +2,20 @@ import { boolean, decimal, index, integer, pgEnum, pgTable, text, timestamp, uui
 
 export const vehicleTypeEnum = pgEnum('vehicle_type', ['bus', 'tram']);
 export const stopTypeEnum = pgEnum('stop_type', ['bus', 'tram']);
-export const incidentTypeEnum = pgEnum('incident_type', ['breakdown', 'danger']);
+export const incidentTypeEnum = pgEnum('incident_type', [
+  'vehicleBreakdown',
+  'infrastructureBreakdown',
+  'dangerInsideVehicle',
+]);
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high', 'critical']);
 export const voteTypeEnum = pgEnum('vote_type', ['confirm', 'reject']);
+export const roleEnum = pgEnum('role', ['user', 'admin']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   password: text('password').notNull(),
-  role: varchar('role', { length: 10 }).notNull().default('user'), // 'user' | 'admin'
+  role: roleEnum('role').notNull().default('user'),
 });
 
 export const blacklistedTokens = pgTable('blacklisted_tokens', {
@@ -22,7 +27,6 @@ export const blacklistedTokens = pgTable('blacklisted_tokens', {
   expiresAt: timestamp('expires_at').notNull(),
 });
 
-// Linia komunikacyjna
 export const lines = pgTable(
   'lines',
   {
@@ -33,7 +37,6 @@ export const lines = pgTable(
   (table) => [index('lines_number_type_idx').on(table.number, table.type)],
 );
 
-// Przystanek
 export const stops = pgTable(
   'stops',
   {
@@ -46,7 +49,6 @@ export const stops = pgTable(
   (table) => [index('stops_lat_lon_idx').on(table.latitude, table.longitude), index('stops_name_idx').on(table.name)],
 );
 
-// Przystanek na linii
 export const lineStops = pgTable(
   'line_stops',
   {
@@ -62,7 +64,6 @@ export const lineStops = pgTable(
   (table) => [index('line_stops_line_id_idx').on(table.lineId), index('line_stops_stop_id_idx').on(table.stopId)],
 );
 
-// Incydent
 export const incidents = pgTable(
   'incidents',
   {
@@ -91,7 +92,6 @@ export const incidents = pgTable(
   ],
 );
 
-// Głosowanie
 export const votes = pgTable(
   'votes',
   {
@@ -111,7 +111,6 @@ export const votes = pgTable(
   ],
 );
 
-// Subskrypcja linii
 export const lineSubscriptions = pgTable(
   'line_subscriptions',
   {
@@ -132,7 +131,6 @@ export const lineSubscriptions = pgTable(
   ],
 );
 
-// Subskrypcja obszaru
 export const areaSubscriptions = pgTable(
   'area_subscriptions',
   {

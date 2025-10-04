@@ -1,0 +1,85 @@
+import { and, asc, between, count, eq, ilike, type SQL } from 'drizzle-orm';
+
+import type { Database } from '../../../../infrastructure/database/database.ts';
+import { stops } from '../../../../infrastructure/database/schema.ts';
+import type { ListStopsFilters, PaginatedStops, StopRepository } from '../../domain/repositories/stopRepository.ts';
+import type { Stop } from '../../domain/types/stop.ts';
+
+export class StopRepositoryImpl implements StopRepository {
+  public constructor(private readonly database: Database) {}
+
+  public async list(filters: ListStopsFilters): Promise<PaginatedStops> {
+    const conditions: SQL[] = [];
+
+    if (filters.type) {
+      conditions.push(eq(stops.type, filters.type));
+    }
+
+    if (filters.name) {
+      conditions.push(ilike(stops.name, `%${filters.name}%`));
+    }
+
+    if (
+      filters.latitude !== undefined &&
+      filters.longitude !== undefined &&
+      filters.radiusMeters !== undefined &&
+      filters.radiusMeters > 0
+    ) {
+      const lat = filters.latitude;
+      const lon = filters.longitude;
+      const radius = filters.radiusMeters;
+      const latDelta = radius / 111_000;
+      const lonDelta = radius / (111_000 * Math.cos((lat * Math.PI) / 180) || 1);
+
+      const minLat = (lat - latDelta).toString();
+      const maxLat = (lat + latDelta).toString();
+      const minLon = (lon - lonDelta).toString();
+      const maxLon = (lon + lonDelta).toString();
+
+      conditions.push(between(stops.latitude, minLat, maxLat));
+      conditions.push(between(stops.longitude, minLon, maxLon));
+    }
+
+    // Pagination parameters - defaults and validation handled at API layer
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 5;
+    const offset = (page - 1) * pageSize;
+
+    // Build base queries
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Execute count query
+    const countQuery = this.database.db.select({ count: count() }).from(stops);
+    const countResult = await (whereClause ? countQuery.where(whereClause) : countQuery);
+    const total = countResult[0]?.count ?? 0;
+
+    // Execute data query with pagination
+    const dataQuery = this.database.db.select().from(stops);
+    const filteredQuery = whereClause ? dataQuery.where(whereClause) : dataQuery;
+
+    const result = await filteredQuery.orderBy(asc(stops.name)).limit(pageSize).offset(offset);
+
+    const data = result.map((row) => this.mapStop(row));
+
+    return {
+      data,
+      total,
+    };
+  }
+
+  public async findById(id: string): Promise<Stop | null> {
+    const [row] = await this.database.db.select().from(stops).where(eq(stops.id, id)).limit(1);
+
+    return row ? this.mapStop(row) : null;
+  }
+
+  private mapStop(row: typeof stops.$inferSelect): Stop {
+    return {
+      id: row.id,
+      name: row.name,
+      latitude: typeof row.latitude === 'string' ? Number(row.latitude) : row.latitude,
+      longitude: typeof row.longitude === 'string' ? Number(row.longitude) : row.longitude,
+      type: row.type,
+    };
+  }
+}
