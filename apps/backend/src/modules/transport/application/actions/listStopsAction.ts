@@ -1,10 +1,9 @@
-import type { ListStopsFilters, StopRepository } from '../../domain/repositories/stopRepository.ts';
-import type { Stop } from '../../domain/types/stop.ts';
+import type { ListStopsFilters, PaginatedStops, StopRepository } from '../../domain/repositories/stopRepository.ts';
 
 export class ListStopsAction {
   public constructor(private readonly stopRepository: StopRepository) {}
 
-  public async execute(filters: ListStopsFilters): Promise<Stop[]> {
+  public async execute(filters: ListStopsFilters): Promise<PaginatedStops> {
     return this.stopRepository.list(filters);
   }
 }

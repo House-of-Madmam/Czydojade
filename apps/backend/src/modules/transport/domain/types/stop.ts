@@ -1,4 +1,9 @@
-export type StopType = 'bus' | 'tram';
+export const stopTypes = {
+  bus: 'bus',
+  tram: 'tram',
+} as const;
+
+export type StopType = (typeof stopTypes)[keyof typeof stopTypes];
 
 export interface Stop {
   readonly id: string;
