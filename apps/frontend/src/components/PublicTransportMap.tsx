@@ -25,11 +25,22 @@ export interface RouteInfo {
   polylinePath: google.maps.LatLng[];
 }
 
+interface Stop {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  type: 'bus' | 'tram';
+}
+
 interface PublicTransportMapProps {
   origin?: string;
   destination?: string;
   onError?: (message: string) => void;
   onRouteCalculated?: (routeInfo: RouteInfo) => void;
+  stops?: Stop[];
+  showStops?: boolean;
+  stopsNearRoute?: Stop[];
 }
 
 const TransitLayer = () => {
@@ -185,7 +196,82 @@ const DirectionsRenderer = ({ origin, destination, onError, onRouteCalculated }:
   return null;
 };
 
-const PublicTransportMap = ({ origin, destination, onError, onRouteCalculated }: PublicTransportMapProps) => {
+const StopsMarkers = ({ stops, showStops, stopsNearRoute }: { stops?: Stop[]; showStops?: boolean; stopsNearRoute?: Stop[] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !showStops || !stops) return;
+
+    const markers: google.maps.Marker[] = [];
+
+    // Funkcja pomocnicza do tworzenia markera
+    const createMarker = (stop: Stop, isNearRoute: boolean = false) => {
+      const marker = new google.maps.Marker({
+        position: { lat: stop.latitude, lng: stop.longitude },
+        map: map,
+        title: `${stop.name} (${stop.type})`,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: isNearRoute ? 8 : 6,
+          fillColor: isNearRoute ? '#FF4444' : (stop.type === 'bus' ? '#00AA00' : '#4444FF'),
+          fillOpacity: 0.8,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2,
+        },
+        zIndex: isNearRoute ? 1000 : 500,
+      });
+
+      // Dodaj info window z szczegółami
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="font-family: Arial, sans-serif; max-width: 200px;">
+            <h3 style="margin: 0 0 8px 0; color: ${stop.type === 'bus' ? '#00AA00' : '#4444FF'};">${stop.name}</h3>
+            <p style="margin: 0; color: #666;">Typ: ${stop.type === 'bus' ? 'Autobus' : 'Tramwaj'}</p>
+            <p style="margin: 0; color: #666; font-size: 12px;">${stop.latitude.toFixed(6)}, ${stop.longitude.toFixed(6)}</p>
+            ${isNearRoute ? '<p style="margin: 4px 0 0 0; color: #FF4444; font-weight: bold;">⚠️ W pobliżu trasy!</p>' : ''}
+          </div>
+        `,
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+      });
+
+      return marker;
+    };
+
+    // Dodaj markery wszystkich przystanków
+    stops.forEach(stop => {
+      const isNearRoute = stopsNearRoute?.some(nearStop => nearStop.id === stop.id) ?? false;
+      const marker = createMarker(stop, isNearRoute);
+      markers.push(marker);
+    });
+
+    // Dodaj specjalne markery dla przystanków w pobliżu trasy (jeśli nie są już dodane)
+    if (stopsNearRoute) {
+      stopsNearRoute.forEach(stop => {
+        // Sprawdź czy marker już istnieje
+        const existingMarker = markers.find(marker =>
+          marker.getPosition()?.lat() === stop.latitude &&
+          marker.getPosition()?.lng() === stop.longitude
+        );
+
+        if (!existingMarker) {
+          const marker = createMarker(stop, true);
+          markers.push(marker);
+        }
+      });
+    }
+
+    return () => {
+      markers.forEach(marker => marker.setMap(null));
+    };
+  }, [map, stops, showStops, stopsNearRoute]);
+
+  return null;
+};
+
+const PublicTransportMap = ({ origin, destination, onError, onRouteCalculated, stops, showStops, stopsNearRoute }: PublicTransportMapProps) => {
   return (
     <Map
       style={{ width: '100%', height: '100%' }}
@@ -195,6 +281,7 @@ const PublicTransportMap = ({ origin, destination, onError, onRouteCalculated }:
     >
       <TransitLayer />
       {origin && destination && <DirectionsRenderer origin={origin} destination={destination} onError={onError} onRouteCalculated={onRouteCalculated} />}
+      {showStops && <StopsMarkers stops={stops} showStops={showStops} stopsNearRoute={stopsNearRoute} />}
     </Map>
   );
 };

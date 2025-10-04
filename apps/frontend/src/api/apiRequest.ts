@@ -1,6 +1,52 @@
 import { config } from '../config';
 import { refreshToken } from './queries/refreshToken';
 
+/**
+ * Prosty fetch bez uwierzytelniania - dla endpointów publicznych
+ */
+export const simpleApiRequest = async <T>(endpoint: string, options: {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  body?: unknown;
+  params?: URLSearchParams;
+} = { method: 'GET' }): Promise<T> => {
+  const { method, body, params } = options;
+
+  const url = params ? `${config.backendUrl}${endpoint}?${params}` : `${config.backendUrl}${endpoint}`;
+
+  const headers: Record<string, string> = {};
+
+  const requestConfig: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (body) {
+    if (body instanceof FormData) {
+      requestConfig.body = body;
+    } else {
+      requestConfig.body = JSON.stringify(body);
+      headers['Content-Type'] = 'application/json';
+    }
+  }
+
+  try {
+    const response = await fetch(url, requestConfig);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    if (response.status === 204) {
+      return null as unknown as T;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Błąd podczas fetch ${method} ${endpoint}:`, error);
+    throw error;
+  }
+};
+
 interface ApiRequestConfig {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   body?: unknown;

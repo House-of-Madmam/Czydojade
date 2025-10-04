@@ -8,6 +8,13 @@
       "when": 1759596501642,
       "tag": "0000_hot_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1759612905400,
+      "tag": "0001_groovy_black_queen",
+      "breakpoints": true
     }
   ]
 }

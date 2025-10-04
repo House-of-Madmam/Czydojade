@@ -58,9 +58,9 @@ export const getVehicleTypes = (routeInfo: RouteInfo): string[] => {
  * Sprawdza czy obiekt znajduje się w pobliżu któregoś z przystanków
  */
 export const isNearAnyStop = (
-  point: { lat: number; lng: number },
-  routeInfo: RouteInfo,
-  maxDistanceMeters: number = 100,
+  _point: { lat: number; lng: number },
+  _routeInfo: RouteInfo,
+  _maxDistanceMeters: number = 100,
 ): { isNear: boolean; nearestStop?: string; distance?: number } => {
   // Ta funkcja wymaga dostępu do współrzędnych przystanków
   // W rzeczywistej implementacji należałoby pobrać współrzędne przystanków

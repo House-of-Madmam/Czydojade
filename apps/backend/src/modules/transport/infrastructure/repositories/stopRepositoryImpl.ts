@@ -6,7 +6,11 @@ import type { ListStopsFilters, PaginatedStops, StopRepository } from '../../dom
 import type { Stop } from '../../domain/types/stop.ts';
 
 export class StopRepositoryImpl implements StopRepository {
-  public constructor(private readonly database: Database) {}
+  private readonly database: Database;
+
+  public constructor(database: Database) {
+    this.database = database;
+  }
 
   public async list(filters: ListStopsFilters): Promise<PaginatedStops> {
     const conditions: SQL[] = [];
