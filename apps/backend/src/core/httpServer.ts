@@ -19,6 +19,7 @@ import { UnauthorizedAccessError } from '../common/errors/unathorizedAccessError
 import { httpStatusCodes } from '../common/http/httpStatusCode.ts';
 import { type LoggerService } from '../common/logger/loggerService.ts';
 import type { Database } from '../infrastructure/database/database.ts';
+import { incidentRoutes } from '../modules/incident/routes/incidentRoutes.ts';
 import { userRoutes } from '../modules/user/routes/userRoutes.ts';
 
 import { type Config } from './config.ts';
@@ -256,6 +257,12 @@ export class HttpServer {
     await this.fastifyServer.register(userRoutes, {
       database: this.database,
       config: this.config,
+      loggerService: this.loggerService,
+      tokenService,
+    });
+
+    await this.fastifyServer.register(incidentRoutes, {
+      database: this.database,
       loggerService: this.loggerService,
       tokenService,
     });
