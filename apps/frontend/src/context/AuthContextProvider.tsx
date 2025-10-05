@@ -72,20 +72,11 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       if (!accessToken) {
-        // Check if refresh token cookie exists before attempting refresh
-        const hasRefreshToken = document.cookie.includes('refreshToken');
-
-        if (hasRefreshToken) {
-          try {
-            const tokenResponse = await refreshToken();
-            setAccessToken(tokenResponse.accessToken);
-          } catch {
-            console.log('No valid refresh token available - user needs to log in');
-            setUserDataInitialized(true);
-          }
-        } else {
-          // No refresh token, user needs to log in
-          console.log('No refresh token in cookies - user needs to log in');
+        try {
+          const tokenResponse = await refreshToken();
+          setAccessToken(tokenResponse.accessToken);
+        } catch {
+          console.log('No valid refresh token available - user needs to log in');
           setUserDataInitialized(true);
         }
       }
