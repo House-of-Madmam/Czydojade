@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/Form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { reportIncident } from '@/api/queries/reportIncident';
 import { useState } from 'react';
@@ -29,10 +30,12 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface Props {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export default function IncidentForm({ onSuccess }: Props) {
+export default function IncidentForm({ open = false, onOpenChange, onSuccess }: Props) {
   const [useLocation, setUseLocation] = useState(true);
   const [isSubmitted, setIsSubmitted] = useState(false); // Track submission success
 
@@ -73,6 +76,13 @@ export default function IncidentForm({ onSuccess }: Props) {
 
       setIsSubmitted(true); // Mark as submitted
       onSuccess?.();
+
+      // Zamknij modal po 2 sekundach
+      setTimeout(() => {
+        onOpenChange?.(false);
+        setIsSubmitted(false);
+        form.reset();
+      }, 2000);
     } catch (error) {
       form.setError('root', {
         message: error instanceof Error ? error.message : 'Registration error',
@@ -81,12 +91,16 @@ export default function IncidentForm({ onSuccess }: Props) {
   }
 
   return (
-    <div className="px-6">
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4"
-        >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Zgłoś wypadek</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+          >
           <BinaryToggleGroup
             options={[
               { label: 'Use Location', value: 'location' },
@@ -218,19 +232,20 @@ export default function IncidentForm({ onSuccess }: Props) {
             disabled={!form.formState.isValid || form.formState.isSubmitting || isSubmitted} // Disable after submission
           >
             {form.formState.isSubmitting ? 'Submitting...' : 'Report Incident'}
-          </Button>
-        </form>
-      </Form>
-      {isSubmitted && (
-        <div className="text-green-600 text-sm mt-3 text-center bg-green-50 border border-green-200 rounded-lg p-3">
-          Thank you for your report!
-        </div>
-      )}
-      {form.formState.errors.root && (
-        <div className="text-red-600 text-sm mt-3 text-center bg-red-50 border border-red-200 rounded-lg p-3">
-          {form.formState.errors.root.message}
-        </div>
-      )}
-    </div>
+            </Button>
+          </form>
+        </Form>
+        {isSubmitted && (
+          <div className="text-green-600 text-sm mt-3 text-center bg-green-50 border border-green-200 rounded-lg p-3">
+            Dziękujemy za zgłoszenie!
+          </div>
+        )}
+        {form.formState.errors.root && (
+          <div className="text-red-600 text-sm mt-3 text-center bg-red-50 border border-red-200 rounded-lg p-3">
+            {form.formState.errors.root.message}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

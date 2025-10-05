@@ -1,6 +1,9 @@
 import { Map, useMap } from '@vis.gl/react-google-maps';
 import { config } from '../config';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { Button } from './ui/Button';
+import IncidentForm from './IncidentForm';
 
 export interface TransitStep {
   instruction: string;
@@ -41,6 +44,7 @@ interface PublicTransportMapProps {
   stops?: Stop[];
   showStops?: boolean;
   stopsNearRoute?: Stop[];
+  showReportButton?: boolean;
 }
 
 const TransitLayer = () => {
@@ -298,7 +302,9 @@ const PublicTransportMap = ({
   stops,
   showStops,
   stopsNearRoute,
+  showReportButton = true,
 }: PublicTransportMapProps) => {
+  const [showReportModal, setShowReportModal] = useState(false);
   // Dark theme styles for Google Maps
   const darkMapStyles = [
     {
@@ -420,30 +426,48 @@ const PublicTransportMap = ({
   ];
 
   return (
-    <Map
-      style={{ width: '100%', height: '100%' }}
-      mapId={config.googleMapsMapId}
-      defaultZoom={13}
-      defaultCenter={{ lat: 50.06143, lng: 19.93658 }} // Kraków
-      styles={darkMapStyles}
-    >
-      <TransitLayer />
-      {origin && destination && (
-        <DirectionsRenderer
-          origin={origin}
-          destination={destination}
-          onError={onError}
-          onRouteCalculated={onRouteCalculated}
-        />
+    <div className="relative w-full h-full">
+      <Map
+        style={{ width: '100%', height: '100%' }}
+        mapId={config.googleMapsMapId}
+        defaultZoom={13}
+        defaultCenter={{ lat: 50.06143, lng: 19.93658 }} // Kraków
+        styles={darkMapStyles}
+      >
+        <TransitLayer />
+        {origin && destination && (
+          <DirectionsRenderer
+            origin={origin}
+            destination={destination}
+            onError={onError}
+            onRouteCalculated={onRouteCalculated}
+          />
+        )}
+        {showStops && (
+          <StopsMarkers
+            stops={stops}
+            showStops={showStops}
+            stopsNearRoute={stopsNearRoute}
+          />
+        )}
+      </Map>
+      {showReportButton && (
+        <div className="absolute bottom-4 right-4 z-10">
+          <Button
+            onClick={() => setShowReportModal(true)}
+            className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+            title="Zgłoś wypadek"
+          >
+            <AlertTriangle className="w-5 h-5" />
+            <span className="hidden sm:inline">Zgłoś wypadek</span>
+          </Button>
+        </div>
       )}
-      {showStops && (
-        <StopsMarkers
-          stops={stops}
-          showStops={showStops}
-          stopsNearRoute={stopsNearRoute}
-        />
-      )}
-    </Map>
+      <IncidentForm
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+      />
+    </div>
   );
 };
 
