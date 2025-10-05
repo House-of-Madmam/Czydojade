@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { pgTable, uuid, varchar, decimal, pgEnum, index, text } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, decimal, pgEnum, index, text, integer } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -36,10 +36,25 @@ export const stops = pgTable(
   (table) => [index('stops_lat_lon_idx').on(table.latitude, table.longitude), index('stops_name_idx').on(table.name)],
 );
 
+export const lineStops = pgTable(
+  'line_stops',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    lineId: uuid('line_id')
+      .notNull()
+      .references(() => lines.id, { onDelete: 'cascade' }),
+    stopId: uuid('stop_id')
+      .notNull()
+      .references(() => stops.id, { onDelete: 'cascade' }),
+    sequence: integer('sequence').notNull(), // kolejność
+  },
+  (table) => [index('line_stops_line_id_idx').on(table.lineId), index('line_stops_stop_id_idx').on(table.stopId)],
+);
+
 const pool = new Pool({ connectionString: databaseUrl });
 const db = drizzle(pool);
-let stopsToInsert;
-let linesToInsert;
+let linesToInsertWithExternalIds = [];
+let stopsToInsertWithExternalIds = [];
 
 interface ApiRoute {
   alerts: unknown[];
@@ -123,21 +138,23 @@ async function seedLines(): Promise<void> {
       }
     }
 
-    linesToInsert = [
+    linesToInsertWithExternalIds = [
       ...Array.from(uniqueTramLines.values()).map((route) => ({
         id: uuidv7(),
+        externalId: route.id,
         number: route.shortName,
         type: 'tram' as const,
         directions: route.directions,
       })),
       ...Array.from(uniqueBusLines.values()).map((route) => ({
         id: uuidv7(),
+        externalId: route.id,
         number: route.shortName,
         type: 'bus' as const,
         directions: route.directions && route.directions.length > 0 ? route.directions : [],
       })),
     ];
-
+    const linesToInsert = linesToInsertWithExternalIds.map(({ externalId, ...line }) => line);
     console.log(
       `Inserting ${linesToInsert.length} unique lines (${uniqueTramLines.size} trams, ${uniqueBusLines.size} buses)...`,
     );
@@ -172,9 +189,10 @@ async function seedStops(): Promise<void> {
       }
     }
 
-    stopsToInsert = [
+    stopsToInsertWithExternalIds = [
       ...Array.from(uniqueTramStops.values()).map((stop) => ({
         id: uuidv7(),
+        externalId: stop.id,
         name: stop.name,
         latitude: stop.lat.toString(),
         longitude: stop.lon.toString(),
@@ -182,6 +200,7 @@ async function seedStops(): Promise<void> {
       })),
       ...Array.from(uniqueBusStops.values()).map((stop) => ({
         id: uuidv7(),
+        externalId: stop.id,
         name: stop.name,
         latitude: stop.lat.toString(),
         longitude: stop.lon.toString(),
@@ -189,6 +208,7 @@ async function seedStops(): Promise<void> {
       })),
     ];
 
+    const stopsToInsert = stopsToInsertWithExternalIds.map(({ externalId, ...stop }) => stop);
     console.log(
       `Inserting ${stopsToInsert.length} unique stops (${uniqueTramStops.size} trams, ${uniqueBusStops.size} buses)...`,
     );
@@ -207,10 +227,15 @@ async function seedStops(): Promise<void> {
   }
 }
 
+function seedLinesStops() {
+  throw new Error('Function not implemented.');
+}
+
 async function main(): Promise<void> {
   try {
     await seedStops();
     await seedLines();
+    await seedLinesStops();
   } catch (error) {
     console.error('Seeding failed:', error);
     process.exitCode = 1;
