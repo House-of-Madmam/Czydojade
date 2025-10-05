@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { pgTable, uuid, varchar, decimal, pgEnum, index, text, integer } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import { v7 as uuidv7 } from 'uuid';
+import { readFile } from 'node:fs/promises';
 
 const databaseUrl = process.env['DATABASE_URL'];
 
@@ -53,8 +54,26 @@ export const lineStops = pgTable(
 
 const pool = new Pool({ connectionString: databaseUrl });
 const db = drizzle(pool);
-let linesToInsertWithExternalIds = [];
-let stopsToInsertWithExternalIds = [];
+
+type LineWithExternalId = {
+  id: string;
+  externalId: string;
+  number: string;
+  type: 'bus' | 'tram';
+  directions: string[];
+};
+
+type StopWithExternalId = {
+  id: string;
+  externalId: string;
+  name: string;
+  latitude: string;
+  longitude: string;
+  type: 'bus' | 'tram';
+};
+
+let linesToInsertWithExternalIds: LineWithExternalId[] = [];
+let stopsToInsertWithExternalIds: StopWithExternalId[] = [];
 
 interface ApiRoute {
   alerts: unknown[];
@@ -227,8 +246,127 @@ async function seedStops(): Promise<void> {
   }
 }
 
-function seedLinesStops() {
-  throw new Error('Function not implemented.');
+const normalizeStopName = (value: string): string => value.normalize('NFKC').trim().toLowerCase();
+
+const extractStopNames = (fileContent: string): string[] => {
+  const lines = fileContent.split(/\r?\n/);
+  const stopNames: string[] = [];
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      continue;
+    }
+
+    if (/^\d+$/.test(trimmed)) {
+      continue;
+    }
+
+    if (/^\d+\s*(?:min|min\.)$/i.test(trimmed)) {
+      continue;
+    }
+
+    if (stopNames.at(-1) === trimmed) {
+      continue;
+    }
+
+    stopNames.push(trimmed);
+  }
+
+  return stopNames;
+};
+
+async function seedLinesStops(): Promise<void> {
+  console.log('Seeding line stops...');
+
+  try {
+    if (linesToInsertWithExternalIds.length === 0) {
+      console.warn('No lines data loaded. Skipping line stops seeding.');
+      return;
+    }
+
+    if (stopsToInsertWithExternalIds.length === 0) {
+      console.warn('No stops data loaded. Skipping line stops seeding.');
+      return;
+    }
+
+    const stopsByTypeAndName = new Map<string, StopWithExternalId>();
+    const stopsByName = new Map<string, StopWithExternalId>();
+
+    for (const stop of stopsToInsertWithExternalIds) {
+      const normalized = normalizeStopName(stop.name);
+      const typeKey = `${stop.type}:${normalized}`;
+
+      if (!stopsByTypeAndName.has(typeKey)) {
+        stopsByTypeAndName.set(typeKey, stop);
+      }
+
+      if (!stopsByName.has(normalized)) {
+        stopsByName.set(normalized, stop);
+      }
+    }
+
+    let totalInserted = 0;
+
+    for (const line of linesToInsertWithExternalIds) {
+      let fileContent: string;
+
+      try {
+        fileContent = await readFile(new URL(`./data/${line.number}.txt`, import.meta.url), 'utf-8');
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException | undefined)?.code === 'ENOENT') {
+          console.warn(`No stops definition found for line ${line.number}. Skipping.`);
+          continue;
+        }
+
+        throw error;
+      }
+
+      const stopNames = extractStopNames(fileContent);
+
+      if (stopNames.length === 0) {
+        console.warn(`No stop names parsed for line ${line.number}. Skipping.`);
+        continue;
+      }
+
+      const values: Array<{ lineId: string; stopId: string; sequence: number }> = [];
+
+      for (const stopName of stopNames) {
+        const normalizedStopName = normalizeStopName(stopName);
+        let matchedStop = stopsByTypeAndName.get(`${line.type}:${normalizedStopName}`);
+
+        if (!matchedStop) {
+          matchedStop = stopsByName.get(normalizedStopName);
+        }
+
+        if (!matchedStop) {
+          console.warn(`Stop "${stopName}" for line ${line.number} not found among fetched stops. Skipping this stop.`);
+          continue;
+        }
+
+        values.push({
+          lineId: line.id,
+          stopId: matchedStop.id,
+          sequence: values.length + 1,
+        });
+      }
+
+      if (values.length === 0) {
+        console.warn(`No stops matched for line ${line.number}. Skipping insert.`);
+        continue;
+      }
+
+      await db.insert(lineStops).values(values);
+      totalInserted += values.length;
+      console.log(`Seeded ${values.length} stops for line ${line.number}.`);
+    }
+
+    console.log(`Successfully seeded ${totalInserted} line stops.`);
+  } catch (error) {
+    console.error('Error inserting line stops:', error);
+    throw error;
+  }
 }
 
 async function main(): Promise<void> {
