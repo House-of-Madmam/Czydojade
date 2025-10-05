@@ -1,10 +1,13 @@
 import { APIProvider } from '@vis.gl/react-google-maps';
 import PublicTransportMap, { RouteInfo, isPointNearRoute } from '../components/PublicTransportMap';
 import LocationInput from '../components/LocationInput';
+import IncidentForm from '../components/IncidentForm';
 import { isPointNearInterpolatedRoute, getInterpolatedRoutePoints } from '../utils/polylineUtils';
 import { getStops, getNearbyStops, type Stop } from '../api/queries/getStops';
 import { config } from '../config';
 import { useState, useCallback, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 export default function TravelPage() {
   const [origin, setOrigin] = useState('');
@@ -24,6 +27,7 @@ export default function TravelPage() {
   const [stopsNearRoute, setStopsNearRoute] = useState<Stop[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string>('');
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const handleSearch = () => {
     if (searchOrigin && searchDestination) {
@@ -556,7 +560,25 @@ export default function TravelPage() {
             Pokaż szczegóły trasy
           </button>
         )}
+
+        {/* Report Incident Button - Fixed in bottom right */}
+        <div className="bottom-4 right-[55px] z-50 fixed">
+          <Button
+            onClick={() => setShowReportModal(true)}
+            className="bg-red-600 hover:bg-red-700 text-white p-5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 border border-red-500"
+            title="Zgłoś wypadek"
+          >
+            <AlertTriangle className="w-14 h-14" />
+            <span className="hidden sm:inline">Zgłoś wypadek</span>
+          </Button>
+        </div>
       </div>
+
+      {/* Incident Report Modal */}
+      <IncidentForm
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+      />
     </div>
   );
 }

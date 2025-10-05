@@ -1,9 +1,6 @@
 import { Map, useMap } from '@vis.gl/react-google-maps';
 import { config } from '../config';
-import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { Button } from './ui/Button';
-import IncidentForm from './IncidentForm';
+import { useEffect, useRef } from 'react';
 
 export interface TransitStep {
   instruction: string;
@@ -44,7 +41,6 @@ interface PublicTransportMapProps {
   stops?: Stop[];
   showStops?: boolean;
   stopsNearRoute?: Stop[];
-  showReportButton?: boolean;
 }
 
 const TransitLayer = () => {
@@ -302,9 +298,7 @@ const PublicTransportMap = ({
   stops,
   showStops,
   stopsNearRoute,
-  showReportButton = true,
 }: PublicTransportMapProps) => {
-  const [showReportModal, setShowReportModal] = useState(false);
   // Dark theme styles for Google Maps
   const darkMapStyles = [
     {
@@ -451,22 +445,6 @@ const PublicTransportMap = ({
           />
         )}
       </Map>
-      {showReportButton && (
-        <div className="absolute bottom-4 right-4 z-10">
-          <Button
-            onClick={() => setShowReportModal(true)}
-            className="bg-black hover:bg-gray-900 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 border border-gray-700"
-            title="Zgłoś wypadek"
-          >
-            <AlertTriangle className="w-5 h-5" />
-            <span className="hidden sm:inline">Zgłoś wypadek</span>
-          </Button>
-        </div>
-      )}
-      <IncidentForm
-        open={showReportModal}
-        onOpenChange={setShowReportModal}
-      />
     </div>
   );
 };
