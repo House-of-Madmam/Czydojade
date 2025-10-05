@@ -1,26 +1,29 @@
-# Fullstack Starter
+# 🚋 CzyDojade – sprawdź, czy dojedziesz!  
 
-## Features
+**CzyDojade** to społecznościowa platforma 🚦 do zgłaszania incydentów w komunikacji miejskiej w czasie rzeczywistym. Dzięki niej pasażerowie mogą **ostrzegać się nawzajem** i szybciej reagować na problemy.  
 
-- **Backend**: Node.js with Fastify, Drizzle ORM, JWT authentication, and RESTful API.
-- **Frontend**: React with Vite, TypeScript, and Tailwind CSS.
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database interactions.
-- **Containerization**: Docker and Docker Compose for easy setup and deployment.
-- **CI/CD**: GitHub Actions for continuous integration and deployment to Fly.io.
-- **Monorepo Management**: Using Turborepo for efficient monorepo management.
-- **Testing**: Vitest for automated testing for backend and frontend.
-- **User module**: Basic pages for login and sign up integrated with backend.
+## 🔔 Co możesz zgłaszać?  
+- 🚍 **Awarie pojazdów** – np. zepsuty tramwaj, autobus z otwartymi drzwiami  
+- 🛠️ **Awarie infrastruktury** – uszkodzony przystanek, zerwana sieć trakcyjna  
+- ⚠️ **Niebezpieczeństwa** – agresywni pasażerowie, podejrzane zachowania  
 
-## Getting Started
+## 📍 Jak to działa?  
+- ✅ Społeczność potwierdza lub odrzuca zgłoszenia głosując  
+- 🗺️ Interaktywna mapa pokazuje aktywne incydenty  
+- 🔔 Subskrybujesz linie/obszary i dostajesz **spersonalizowane alerty**  
 
-### Prerequisites
+## 👩‍💻 Przykłady użycia:  
+- Widzisz awarię tramwaju? 👉 Zgłoś i ostrzeż innych  
+- Planujesz dojazd? 👉 Sprawdź mapę incydentów i wybierz lepszą trasę  
+- Czujesz zagrożenie w autobusie? 👉 Oznacz lokalizację i powiadom pasażerów  
+- Jeździsz codziennie tą samą linią? 👉 Subskrybuj i dostawaj powiadomienia  
 
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-- [Node.js](https://nodejs.org/) (for local development)
-- [npm](https://www.npmjs.com/) (comes with Node.js)
+---
 
-### Installation
+🚀 **CzyDojade** sprawia, że codzienny dojazd jest bezpieczniejszy, szybszy i mniej stresujący.  
+
+
+## Setup
 
 1. Install dependencies:
 
