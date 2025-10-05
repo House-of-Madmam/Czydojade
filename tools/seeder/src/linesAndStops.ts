@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { pgTable, uuid, varchar, decimal, pgEnum, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, decimal, pgEnum, index, text } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -8,6 +8,19 @@ const databaseUrl = process.env['DATABASE_URL'];
 if (!databaseUrl) {
   throw new Error('DATABASE_URL is not defined');
 }
+
+export const vehicleTypeEnum = pgEnum('vehicle_type', ['bus', 'tram']);
+
+export const lines = pgTable(
+  'lines',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    number: varchar('number', { length: 50 }).notNull(),
+    type: vehicleTypeEnum('type').notNull(),
+    directions: text('directions').array().notNull(),
+  },
+  (table) => [index('lines_number_type_idx').on(table.number, table.type)],
+);
 
 export const stopTypeEnum = pgEnum('stop_type', ['bus', 'tram']);
 
@@ -25,6 +38,21 @@ export const stops = pgTable(
 
 const pool = new Pool({ connectionString: databaseUrl });
 const db = drizzle(pool);
+let stopsToInsert;
+let linesToInsert;
+
+interface ApiRoute {
+  alerts: unknown[];
+  authority: string;
+  directions: string[];
+  id: string;
+  name: string;
+  shortName: string;
+}
+
+interface ApiRouteResponse {
+  routes: ApiRoute[];
+}
 
 interface ApiStop {
   id: string;
@@ -32,6 +60,25 @@ interface ApiStop {
   lat: number;
   lon: number;
   parent: string;
+}
+
+async function fetchLinesFromApi(): Promise<ApiRoute[]> {
+  const url = 'https://ttss.krakow.pl/internetservice/services/routeInfo/route';
+
+  console.log(`Fetching lines from ${url}...`);
+
+  const response = await fetch(url, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch lines: ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as ApiRouteResponse;
+  console.log(`Fetched ${data.routes.length} routes from API`);
+
+  return data.routes;
 }
 
 async function fetchStopsFromApi(type: 'tram' | 'bus'): Promise<ApiStop[]> {
@@ -51,15 +98,66 @@ async function fetchStopsFromApi(type: 'tram' | 'bus'): Promise<ApiStop[]> {
   return data;
 }
 
+async function seedLines(): Promise<void> {
+  console.log('Seeding lines...');
+
+  try {
+    const allRoutes = await fetchLinesFromApi();
+
+    const tramRoutes = allRoutes.filter((route) => route.authority === 'MPK');
+    const busRoutes = allRoutes.filter((route) => route.authority !== 'MPK');
+
+    console.log(`Found ${tramRoutes.length} tram routes and ${busRoutes.length} bus routes`);
+
+    const uniqueTramLines = new Map<string, ApiRoute>();
+    for (const route of tramRoutes) {
+      if (!uniqueTramLines.has(route.shortName) && route.directions && route.directions.length > 0) {
+        uniqueTramLines.set(route.shortName, route);
+      }
+    }
+
+    const uniqueBusLines = new Map<string, ApiRoute>();
+    for (const route of busRoutes) {
+      if (!uniqueBusLines.has(route.shortName)) {
+        uniqueBusLines.set(route.shortName, route);
+      }
+    }
+
+    linesToInsert = [
+      ...Array.from(uniqueTramLines.values()).map((route) => ({
+        id: uuidv7(),
+        number: route.shortName,
+        type: 'tram' as const,
+        directions: route.directions,
+      })),
+      ...Array.from(uniqueBusLines.values()).map((route) => ({
+        id: uuidv7(),
+        number: route.shortName,
+        type: 'bus' as const,
+        directions: route.directions && route.directions.length > 0 ? route.directions : [],
+      })),
+    ];
+
+    console.log(
+      `Inserting ${linesToInsert.length} unique lines (${uniqueTramLines.size} trams, ${uniqueBusLines.size} buses)...`,
+    );
+
+    await db.insert(lines).values(linesToInsert);
+
+    console.log(`Successfully seeded ${linesToInsert.length} lines.`);
+  } catch (error) {
+    console.error('Error inserting lines:', error);
+    throw error;
+  }
+}
+
 async function seedStops(): Promise<void> {
   console.log('Seeding stops...');
 
   try {
-    // Fetch data from both APIs
     const tramStops = await fetchStopsFromApi('tram');
     const busStops = await fetchStopsFromApi('bus');
 
-    // Process tram stops with unique names
     const uniqueTramStops = new Map<string, ApiStop>();
     for (const stop of tramStops) {
       if (!uniqueTramStops.has(stop.name)) {
@@ -67,7 +165,6 @@ async function seedStops(): Promise<void> {
       }
     }
 
-    // Process bus stops with unique names
     const uniqueBusStops = new Map<string, ApiStop>();
     for (const stop of busStops) {
       if (!uniqueBusStops.has(stop.name)) {
@@ -75,8 +172,7 @@ async function seedStops(): Promise<void> {
       }
     }
 
-    // Prepare data for insertion
-    const stopsToInsert = [
+    stopsToInsert = [
       ...Array.from(uniqueTramStops.values()).map((stop) => ({
         id: uuidv7(),
         name: stop.name,
@@ -97,7 +193,6 @@ async function seedStops(): Promise<void> {
       `Inserting ${stopsToInsert.length} unique stops (${uniqueTramStops.size} trams, ${uniqueBusStops.size} buses)...`,
     );
 
-    // Insert stops in batches to avoid potential issues with large datasets
     const batchSize = 1000;
     for (let i = 0; i < stopsToInsert.length; i += batchSize) {
       const batch = stopsToInsert.slice(i, i + batchSize);
@@ -109,9 +204,19 @@ async function seedStops(): Promise<void> {
   } catch (error) {
     console.error('Error inserting stops:', error);
     throw error;
+  }
+}
+
+async function main(): Promise<void> {
+  try {
+    await seedStops();
+    await seedLines();
+  } catch (error) {
+    console.error('Seeding failed:', error);
+    process.exitCode = 1;
   } finally {
     await pool.end();
   }
 }
 
-await seedStops();
+await main();
