@@ -1,7 +1,8 @@
 import { APIProvider } from '@vis.gl/react-google-maps';
 import PublicTransportMap, { RouteInfo, isPointNearRoute } from '../components/PublicTransportMap';
+import LocationInput from '../components/LocationInput';
 import { isPointNearInterpolatedRoute, getInterpolatedRoutePoints } from '../utils/polylineUtils';
-import { getStops, getNearbyStops, searchStopsByName, type Stop } from '../api/queries/getStops';
+import { getStops, getNearbyStops, type Stop } from '../api/queries/getStops';
 import { config } from '../config';
 import { useState, useCallback, useEffect } from 'react';
 
@@ -42,10 +43,6 @@ export default function TravelPage() {
     setShowRouteDetails(false);
     setStopsNearRoute([]);
     setShowStops(false);
-    setOriginSuggestions([]);
-    setDestinationSuggestions([]);
-    setShowOriginSuggestions(false);
-    setShowDestinationSuggestions(false);
   };
 
   // Ładowanie przystanków w okolicy użytkownika przy starcie
@@ -80,58 +77,6 @@ export default function TravelPage() {
     }
   }, []);
 
-  // Wyszukiwanie przystanków po nazwie dla autouzupełniania
-  const searchStopsForAutocomplete = useCallback(async (query: string): Promise<Stop[]> => {
-    if (!query.trim()) return [];
-
-    try {
-      return await searchStopsByName(query, 10);
-    } catch (error) {
-      console.error('Błąd podczas wyszukiwania przystanków:', error);
-      return [];
-    }
-  }, []);
-
-  // Obsługa zmiany tekstu w polu origin
-  const handleOriginChange = useCallback(async (value: string) => {
-    setSearchOrigin(value);
-    if (value.length >= 2) {
-      const suggestions = await searchStopsForAutocomplete(value);
-      setOriginSuggestions(suggestions);
-      setShowOriginSuggestions(suggestions.length > 0);
-    } else {
-      setOriginSuggestions([]);
-      setShowOriginSuggestions(false);
-    }
-  }, [searchStopsForAutocomplete]);
-
-  // Obsługa zmiany tekstu w polu destination
-  const handleDestinationChange = useCallback(async (value: string) => {
-    setSearchDestination(value);
-    if (value.length >= 2) {
-      const suggestions = await searchStopsForAutocomplete(value);
-      setDestinationSuggestions(suggestions);
-      setShowDestinationSuggestions(suggestions.length > 0);
-    } else {
-      setDestinationSuggestions([]);
-      setShowDestinationSuggestions(false);
-    }
-  }, [searchStopsForAutocomplete]);
-
-  // Wybór sugestii przystanku
-  const selectStopSuggestion = useCallback((stop: Stop, field: 'origin' | 'destination') => {
-    const stopAddress = `${stop.name}, Kraków`; // Dodaj Kraków dla lepszego wyszukiwania
-
-    if (field === 'origin') {
-      setSearchOrigin(stopAddress);
-      setOrigin(stopAddress);
-      setShowOriginSuggestions(false);
-    } else {
-      setSearchDestination(stopAddress);
-      setDestination(stopAddress);
-      setShowDestinationSuggestions(false);
-    }
-  }, []);
 
   // Ładowanie przystanków przy montowaniu komponentu
   useEffect(() => {
@@ -254,113 +199,178 @@ export default function TravelPage() {
           <h1 className="text-2xl font-bold text-white mb-4">Twoja podróż</h1>
           
           {/* Route Input Form */}
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Punkt początkowy
-              </label>
-              <input
-                type="text"
+          <div className="w-full">
+            {/* Desktop layout (>=750px) */}
+            <div className="hidden min-[750px]:flex flex-row gap-3">
+              <LocationInput
                 value={searchOrigin}
-                onChange={(e) => handleOriginChange(e.target.value)}
+                onChange={setSearchOrigin}
                 placeholder="np. Rynek Główny, Kraków lub nazwa przystanku"
-                className="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-gray-800 text-white placeholder-gray-400"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                onBlur={() => setTimeout(() => setShowOriginSuggestions(false), 200)}
-                onFocus={() => {
-                  if (originSuggestions.length > 0) {
-                    setShowOriginSuggestions(true);
-                  }
-                }}
+                label="Punkt początkowy"
+                suggestions={originSuggestions}
+                showSuggestions={showOriginSuggestions}
+                onShowSuggestions={setShowOriginSuggestions}
+                onSuggestionsChange={setOriginSuggestions}
+                enableGeolocation={true}
               />
 
-              {/* Dropdown z sugestiami przystanków - Origin */}
-              {showOriginSuggestions && originSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
-                  {originSuggestions.map((stop) => (
-                    <button
-                      key={stop.id}
-                      onClick={() => selectStopSuggestion(stop, 'origin')}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-700 border-b border-gray-600 last:border-b-0 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="font-medium text-white">{stop.name}</div>
-                        <div className="text-sm text-gray-400">
-                          {stop.latitude.toFixed(4)}, {stop.longitude.toFixed(4)}
-                        </div>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        stop.type === 'bus' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {stop.type === 'bus' ? '🚌' : '🚊'} {stop.type}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 relative">
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Punkt końcowy
-              </label>
-              <input
-                type="text"
-                value={searchDestination}
-                onChange={(e) => handleDestinationChange(e.target.value)}
-                placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
-                className="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-gray-800 text-white placeholder-gray-400"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                onBlur={() => setTimeout(() => setShowDestinationSuggestions(false), 200)}
-                onFocus={() => {
-                  if (destinationSuggestions.length > 0) {
-                    setShowDestinationSuggestions(true);
-                  }
-                }}
-              />
-
-              {/* Dropdown z sugestiami przystanków - Destination */}
-              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
-                  {destinationSuggestions.map((stop) => (
-                    <button
-                      key={stop.id}
-                      onClick={() => selectStopSuggestion(stop, 'destination')}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-700 border-b border-gray-600 last:border-b-0 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="font-medium text-white">{stop.name}</div>
-                        <div className="text-sm text-gray-400">
-                          {stop.latitude.toFixed(4)}, {stop.longitude.toFixed(4)}
-                        </div>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        stop.type === 'bus' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {stop.type === 'bus' ? '🚌' : '🚊'} {stop.type}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-end gap-2">
-              <button
-                onClick={handleSearch}
-                disabled={!searchOrigin || !searchDestination}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
-              >
-                Szukaj trasy
-              </button>
-              {(origin || destination || searchOrigin || searchDestination) && (
+              {/* Swap button - horizontal on desktop */}
+              <div className="flex items-end justify-center px-2 mt-[23px]">
                 <button
-                  onClick={handleClear}
-                  className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  onClick={() => {
+                    const tempOrigin = searchOrigin;
+                    setSearchOrigin(searchDestination);
+                    setSearchDestination(tempOrigin);
+                  }}
+                  className="flex items-center justify-center px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30"
+                  title="Zamień miejscami"
+                  type="button"
                 >
-                  Wyczyść
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M16 17l4-4-4-4M8 7l-4 4 4 4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M20 12H4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </button>
-              )}
+              </div>
+
+              <LocationInput
+                value={searchDestination}
+                onChange={setSearchDestination}
+                placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
+                label="Punkt końcowy"
+                suggestions={destinationSuggestions}
+                showSuggestions={showDestinationSuggestions}
+                onShowSuggestions={setShowDestinationSuggestions}
+                onSuggestionsChange={setDestinationSuggestions}
+                enableGeolocation={false}
+              />
+
+              <div className="flex items-end gap-2 mt-[23px]">
+                <button
+                  onClick={handleSearch}
+                  disabled={!searchOrigin || !searchDestination}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
+                >
+                  Szukaj trasy
+                </button>
+                {(origin || destination || searchOrigin || searchDestination) && (
+                  <button
+                    onClick={handleClear}
+                    className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    Wyczyść
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile layout (<750px) */}
+            <div className="flex min-[750px]:hidden flex-col gap-3">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <LocationInput
+                    value={searchOrigin}
+                    onChange={setSearchOrigin}
+                    placeholder="np. Rynek Główny, Kraków lub nazwa przystanku"
+                    label="Punkt początkowy"
+                    suggestions={originSuggestions}
+                    showSuggestions={showOriginSuggestions}
+                    onShowSuggestions={setShowOriginSuggestions}
+                    onSuggestionsChange={setOriginSuggestions}
+                    enableGeolocation={true}
+                  />
+                </div>
+
+                {/* Swap button - vertical on mobile */}
+                <div className="flex items-center justify-center w-12">
+                  <button
+                    onClick={() => {
+                      const tempOrigin = searchOrigin;
+                      setSearchOrigin(searchDestination);
+                      setSearchDestination(tempOrigin);
+                    }}
+                    className="flex items-center justify-center w-10 h-16 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30"
+                    title="Zamień miejscami"
+                    type="button"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M7 16l4 4 4-4M17 8l-4-4-4 4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M12 20V4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <LocationInput
+                    value={searchDestination}
+                    onChange={setSearchDestination}
+                    placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
+                    label="Punkt końcowy"
+                    suggestions={destinationSuggestions}
+                    showSuggestions={showDestinationSuggestions}
+                    onShowSuggestions={setShowDestinationSuggestions}
+                    onSuggestionsChange={setDestinationSuggestions}
+                    enableGeolocation={false}
+                  />
+                </div>
+
+                {/* Swap button placeholder for alignment */}
+                <div className="w-12"></div>
+              </div>
+
+              <div className="flex items-end gap-2 mt-[23px]">
+                <button
+                  onClick={handleSearch}
+                  disabled={!searchOrigin || !searchDestination}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
+                >
+                  Szukaj trasy
+                </button>
+                {(origin || destination || searchOrigin || searchDestination) && (
+                  <button
+                    onClick={handleClear}
+                    className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    Wyczyść
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
