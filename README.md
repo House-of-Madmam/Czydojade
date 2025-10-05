@@ -2,6 +2,8 @@
 
 **CzyDojade** to społecznościowa platforma 🚦 do zgłaszania incydentów w komunikacji miejskiej w czasie rzeczywistym. Dzięki niej pasażerowie mogą **ostrzegać się nawzajem** i szybciej reagować na problemy.  
 
+Demo: https://www.youtube.com/watch?v=zQZRO522nz4
+
 ## 🔔 Co możesz zgłaszać?  
 - 🚍 **Awarie pojazdów** – np. zepsuty tramwaj, autobus z otwartymi drzwiami  
 - 🛠️ **Awarie infrastruktury** – uszkodzony przystanek, zerwana sieć trakcyjna  
@@ -20,7 +22,7 @@
 
 ---
 
-🚀 **CzyDojade** sprawia, że codzienny dojazd jest bezpieczniejszy, szybszy i mniej stresujący.  
+🚀 **CzyDojade** sprawia, że codzienny dojazd jest bezpieczniejszy, szybszy i mniej stresujący.
 
 
 ## Setup
