@@ -11,7 +11,8 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { IncidentPriority, IncidentType } from '@/api/types/incident';
 import BinaryToggleGroup from './ui/BinaryToggleGroup';
-import GeolocationService from '@/api/hardware/position/geolocation';
+import GeolocationStatus from './GeolocationStatus';
+import { store } from '@/store';
 
 const formSchema = z.object({
   description: z.string().max(1000).optional(),
@@ -62,10 +63,10 @@ export default function IncidentForm({ onSuccess }: Props) {
 
   async function onSubmit(values: FormValues) {
     try {
-      const { coords } = await GeolocationService.getCurrentPosition();
-      if (useLocation && coords) {
-        values.latitude = coords.latitude.toString();
-        values.longitude = coords.longitude.toString();
+      const {latitude, longitude} = store.getState().geolocation;
+      if (useLocation && latitude !== null && longitude !== null) {
+        values.latitude = latitude.toString();
+        values.longitude = longitude.toString();
         values.stopId = undefined;
       } else {
         values.lineId = undefined;
@@ -105,10 +106,13 @@ export default function IncidentForm({ onSuccess }: Props) {
             onValueChange={(event) => setUseLocation(event.target.value === 'location')}
           />
           {useLocation ? (
+            <>
             <FormField
               control={form.control}
               name="lineId"
               render={({ field }) => (
+                <>
+                <GeolocationStatus />
                 <FormItem>
                   <FormLabel>Tram line</FormLabel>
                   <FormControl>
@@ -133,8 +137,10 @@ export default function IncidentForm({ onSuccess }: Props) {
                   </FormControl>
                   <FormMessage />
                 </FormItem>
+                </>
               )}
             />
+            </>
           ) : (
             <FormField
               control={form.control}
