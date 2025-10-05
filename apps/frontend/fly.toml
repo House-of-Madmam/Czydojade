@@ -1,5 +1,5 @@
 app = "czydojade-frontend"
-primary_region = "waw"
+primary_region = "fra"
 
 [build]
   dockerfile = "./Dockerfile"
