@@ -10,19 +10,19 @@ export default function Footer() {
       className="bg-slate-800 text-white py-14 mt-auto"
       aria-label="Footer"
     >
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:justify-center md:items-center gap-10">
-        <div className="flex justify-center items-center md:w-1/3 min-h-[120px]">
+      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:justify-center lg:items-center gap-8 lg:gap-10">
+        <div className="flex justify-center items-center lg:w-1/3 min-h-[80px] lg:min-h-[120px]">
           <Link
             to="/"
-            className="flex items-center mb-4"
+            className="flex items-center mb-2 lg:mb-4"
           >
-            <img src="/logo.svg" alt="CzyDojade Logo" className="h-16 w-auto filter brightness-0 invert" />
+            <img src="/logo.svg" alt="CzyDojade Logo" className="h-12 lg:h-16 w-auto filter brightness-0 invert" />
           </Link>
         </div>
 
-        <div className="md:w-1/3 md:flex md:justify-end">
+        <div className="w-full flex flex-col items-center lg:w-1/3 lg:flex lg:justify-end">
 
-          <div className="flex flex-row gap-16">
+          <div className="flex flex-col sm:flex-row gap-6 lg:gap-16 justify-center lg:justify-start">
 
             {/* Account Section */}
             <div>
