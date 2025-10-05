@@ -14,5 +14,5 @@ export interface PaginatedLines {
 
 export interface LineRepository {
   list(filters: ListLinesFilters): Promise<PaginatedLines>;
-  // findById(id: string): Promise<Line | null>;
+  findById(id: string): Promise<Line | null>;
 }

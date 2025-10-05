@@ -12,3 +12,8 @@ export interface Stop {
   readonly longitude: number;
   readonly type: StopType;
 }
+
+export interface LineStop {
+  readonly sequence: number;
+  readonly stop: Stop;
+}

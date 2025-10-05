@@ -5,11 +5,12 @@ import type { FastifyInstance } from 'fastify';
 
 import type { Database } from '../../../infrastructure/database/database.ts';
 import { ListLinesAction } from '../application/actions/listLinesAction.ts';
+import { ListLineStopsAction } from '../application/actions/listLineStopsAction.ts';
 import { ListStopsAction } from '../application/actions/listStopsAction.ts';
 import type { LineRepository, ListLinesFilters, PaginatedLines } from '../domain/repositories/lineRepository.ts';
 import type { ListStopsFilters } from '../domain/repositories/stopRepository.ts';
 import type { Line } from '../domain/types/line.ts';
-import { type Stop } from '../domain/types/stop.ts';
+import { type LineStop, type Stop } from '../domain/types/stop.ts';
 import { LineRepositoryImpl } from '../infrastructure/repositories/lineRepositoryImpl.ts';
 import { StopRepositoryImpl } from '../infrastructure/repositories/stopRepositoryImpl.ts';
 
@@ -41,8 +42,19 @@ const paginatedStopsResponseSchema = Type.Object({
   total: Type.Integer({ minimum: 0 }),
 });
 
+const lineStopSchema = Type.Object({
+  sequence: Type.Integer({ minimum: 0 }),
+  stop: stopSchema,
+});
+
+const lineStopsResponseSchema = Type.Object({
+  data: Type.Array(lineStopSchema),
+  total: Type.Integer({ minimum: 0 }),
+});
+
 type LineResponse = Static<typeof lineSchema>;
 type StopResponse = Static<typeof stopSchema>;
+type LineStopResponse = Static<typeof lineStopSchema>;
 
 type TransportRoutesOptions = {
   database: Database;
@@ -57,6 +69,7 @@ export async function transportRoutes(
 
   const lineRepository: LineRepository = new LineRepositoryImpl(database);
   const listLinesAction = new ListLinesAction(lineRepository);
+  const listLineStopsAction = new ListLineStopsAction(lineRepository, stopRepository);
 
   fastify.get('/lines', {
     schema: {
@@ -85,6 +98,28 @@ export async function transportRoutes(
       return reply.send({
         data: mappedData,
         total: paginatedLines.total,
+      });
+    },
+  });
+
+  fastify.get('/lines/:lineId/stops', {
+    schema: {
+      params: Type.Object({
+        lineId: Type.String({ format: 'uuid' }),
+      }),
+      response: {
+        200: lineStopsResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const { lineId } = request.params as { lineId: string };
+
+      const lineStops = await listLineStopsAction.execute(lineId);
+      const mappedData: LineStopResponse[] = lineStops.map((lineStop: LineStop) => mapLineStopToResponse(lineStop));
+
+      return reply.send({
+        data: mappedData,
+        total: mappedData.length,
       });
     },
   });
@@ -125,6 +160,13 @@ export async function transportRoutes(
       });
     },
   });
+}
+
+function mapLineStopToResponse(lineStop: LineStop): LineStopResponse {
+  return {
+    sequence: lineStop.sequence,
+    stop: mapStopToResponse(lineStop.stop),
+  };
 }
 
 function mapLineToResponse(line: Line): LineResponse {
