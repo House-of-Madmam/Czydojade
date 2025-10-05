@@ -56,11 +56,7 @@ export class StopRepositoryImpl implements StopRepository {
     const dataQuery = this.database.db.select().from(stops);
     const filteredQuery = whereClause ? dataQuery.where(whereClause) : dataQuery;
 
-    console.log({ conditions });
-
     const result = await filteredQuery.orderBy(asc(stops.name)).limit(filters.pageSize).offset(offset);
-
-    console.log({ result });
 
     const data = result.map((row) => this.mapStop(row));
 
