@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/Button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/Form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { reportIncident } from '@/api/queries/reportIncident';
 import { useState } from 'react';
 import { z } from 'zod';
 import { IncidentPriority, IncidentType } from '@/api/types/incident';
 import BinaryToggleGroup from './ui/BinaryToggleGroup';
-import GeolocationStatus from './GeolocationStatus';
 import { store } from '@/store';
 import StopPicker from './StopPicker';
 import LinePicker from './LinePicker';
@@ -127,7 +127,6 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
                   name="lineId"
                   render={({ field }) => (
                     <>
-                      <GeolocationStatus />
                       <FormItem>
                         <FormLabel className="text-white">Linia</FormLabel>
                         <FormControl>
@@ -152,26 +151,25 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
                         <FormItem>
                           <FormLabel className="text-white">Kierunek</FormLabel>
                           <FormControl>
-                            <select
-                              className="w-full bg-gray-900/50 border-gray-700 text-white rounded-lg p-2 focus:border-white focus:ring-white/20"
+                            <Select
+                              onValueChange={field.onChange}
                               value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
                             >
-                              <option
-                                value=""
-                                disabled
-                              >
-                                Wybierz kierunek
-                              </option>
-                              {selectedLine.directions.map((direction) => (
-                                <option
-                                  key={direction}
-                                  value={direction}
-                                >
-                                  {direction}
-                                </option>
-                              ))}
-                            </select>
+                              <SelectTrigger className="w-full h-12 bg-gray-900/50 border-gray-700 text-white rounded-md focus:border-white focus:ring-white/20 placeholder:text-gray-400">
+                                <SelectValue placeholder="Wybierz kierunek" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-800 border-gray-700">
+                                {selectedLine.directions.map((direction) => (
+                                  <SelectItem
+                                    key={direction}
+                                    value={direction}
+                                    className="text-white hover:bg-gray-600/50 focus:bg-gray-600/50 focus:text-white"
+                                  >
+                                    {direction}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
