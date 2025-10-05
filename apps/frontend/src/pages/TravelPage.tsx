@@ -34,10 +34,10 @@ export default function TravelPage() {
   const [showStops, setShowStops] = useState(false);
   const [stopsNearRoute, setStopsNearRoute] = useState<Stop[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState<string>('');
+  const [, setLocationError] = useState<string>('');
   const [showReportModal, setShowReportModal] = useState(false);
   const [incidents, setIncidents] = useState<IncidentWithVotes[]>([]);
-  const [showIncidents] = useState(true);
+  const [showIncidents] = useState(true); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const handleSearch = () => {
     if (searchOrigin && searchDestination) {
@@ -104,13 +104,10 @@ export default function TravelPage() {
   }, []);
 
   // Obsługa zmiany widoku mapy
-  const handleViewChange = useCallback(
-    (bounds: google.maps.LatLngBounds) => {
-      const viewBounds = calculateViewBounds(bounds);
-      loadIncidentsInView(viewBounds.center.lat, viewBounds.center.lng, viewBounds.radiusMeters);
-    },
-    [loadIncidentsInView],
-  );
+  const handleViewChange = useCallback((bounds: google.maps.LatLngBounds) => {
+    const viewBounds = calculateViewBounds(bounds);
+    loadIncidentsInView(viewBounds.center.lat, viewBounds.center.lng, viewBounds.radiusMeters);
+  }, [loadIncidentsInView]);
 
   // Ładowanie przystanków przy montowaniu komponentu
   useEffect(() => {
@@ -421,29 +418,34 @@ export default function TravelPage() {
           )}
 
           {/* Location error */}
-          {locationError && (
-            <div className="mt-3 p-3 bg-orange-900/30 border border-orange-700 rounded-lg">
-              <p className="text-orange-300 text-sm">
-                📍 {locationError}
-                <br />
-                <span className="text-xs">Używam podstawowych danych przystanków.</span>
-              </p>
-            </div>
-          )}
+          {
+          // locationError 
+          // && (
+          //   <div className="mt-3 p-3 bg-orange-900/30 border border-orange-700 rounded-lg">
+          //     <p className="text-orange-300 text-sm">
+          //       📍 {locationError}
+          //       <br />
+          //       <span className="text-xs">Używam podstawowych danych przystanków.</span>
+          //     </p>
+          //   </div>
+          // )
+          }
 
           {/* Success message */}
-          {!stopsLoading && allStops.length > 0 && (
-            <div className="mt-3 p-3 bg-green-900/30 border border-green-700 rounded-lg">
-              <p className="text-green-300 text-sm flex items-center gap-2">
-                ✅ Załadowano {allStops.length} przystanków
-                {userLocation && (
-                  <span className="text-xs">
-                    (okolica: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)})
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
+          {!stopsLoading && allStops.length > 0 
+  // && (
+          //   <div className="mt-3 p-3 bg-green-900/30 border border-green-700 rounded-lg">
+          //     <p className="text-green-300 text-sm flex items-center gap-2">
+          //       ✅ Załadowano {allStops.length} przystanków
+          //       {userLocation && (
+          //         <span className="text-xs">
+          //           (okolica: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)})
+          //         </span>
+          //       )}
+          //     </p>
+          //   </div>
+          // )
+          }
 
           {/* Route Controls */}
           {routeInfo && (
