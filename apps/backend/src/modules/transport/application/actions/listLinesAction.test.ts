@@ -20,6 +20,7 @@ describe('ListLinesAction', () => {
 
     const lineRepository: LineRepository = {
       list: vi.fn().mockResolvedValue(expectedResult),
+      findById: vi.fn(),
     };
 
     const action = new ListLinesAction(lineRepository);
