@@ -92,9 +92,9 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-black border-gray-800 text-white shadow-2xl">
         <DialogHeader>
-          <DialogTitle>Zgłoś wypadek</DialogTitle>
+          <DialogTitle className="text-white">Zgłoś wypadek</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -228,20 +228,20 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
 
           <Button
             type="submit"
-            className="w-full h-11 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:text-gray-500 font-medium transition-all duration-200 shadow-sm hover:shadow-md mt-6"
+            className="w-full h-12 bg-white hover:bg-gray-100 text-black disabled:bg-gray-300 disabled:text-gray-500 font-semibold transition-all duration-300 shadow-lg hover:shadow-xl mt-6 border-0 rounded-lg transform hover:scale-[1.02] active:scale-[0.98]"
             disabled={!form.formState.isValid || form.formState.isSubmitting || isSubmitted} // Disable after submission
           >
-            {form.formState.isSubmitting ? 'Submitting...' : 'Report Incident'}
+            {form.formState.isSubmitting ? 'Wysyłanie...' : 'Zgłoś wypadek'}
             </Button>
           </form>
         </Form>
         {isSubmitted && (
-          <div className="text-green-600 text-sm mt-3 text-center bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="text-green-300 text-sm mt-3 text-center bg-gray-900/50 border border-gray-700 rounded-lg p-3 backdrop-blur-sm">
             Dziękujemy za zgłoszenie!
           </div>
         )}
         {form.formState.errors.root && (
-          <div className="text-red-600 text-sm mt-3 text-center bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="text-red-300 text-sm mt-3 text-center bg-gray-900/50 border border-gray-700 rounded-lg p-3 backdrop-blur-sm">
             {form.formState.errors.root.message}
           </div>
         )}

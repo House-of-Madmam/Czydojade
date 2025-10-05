@@ -20,15 +20,15 @@ export default function BinaryToggleGroup({ options, value, onValueChange, class
 
   return (
     <div className={`flex justify-center ${className || ''}`} {...props}>
-      <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/50 shadow-sm">
+      <div className="bg-gray-800/90 backdrop-blur-md p-1 rounded-xl border border-gray-700 shadow-2xl">
         {options.map((option) => (
           <button
             key={option.value}
             type='button'
-            className={`px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
+            className={`px-8 py-3 text-sm font-medium rounded-lg transition-all duration-300 cursor-pointer min-w-[120px] ${
               activeValue === option.value
-                ? 'bg-white text-teal-600 shadow-lg shadow-teal-500/10 scale-105'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                ? 'bg-white text-black shadow-lg scale-105 font-semibold'
+                : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
             }`}
             onClick={() => handleValueChange(option.value)}
           >

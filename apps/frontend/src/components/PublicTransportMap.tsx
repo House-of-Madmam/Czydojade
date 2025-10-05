@@ -455,7 +455,7 @@ const PublicTransportMap = ({
         <div className="absolute bottom-4 right-4 z-10">
           <Button
             onClick={() => setShowReportModal(true)}
-            className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+            className="bg-black hover:bg-gray-900 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 border border-gray-700"
             title="Zgłoś wypadek"
           >
             <AlertTriangle className="w-5 h-5" />
