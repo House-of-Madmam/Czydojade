@@ -340,18 +340,7 @@ const PublicTransportMap = ({
     },
     {
       featureType: 'poi',
-      elementType: 'geometry',
-      stylers: [{ color: '#283d6a' }],
-    },
-    {
-      featureType: 'poi',
-      elementType: 'labels.text.fill',
-      stylers: [{ color: '#6f9ba5' }],
-    },
-    {
-      featureType: 'poi',
-      elementType: 'labels.text.stroke',
-      stylers: [{ color: '#1d2c4d' }],
+      stylers: [{ visibility: 'off' }],
     },
     {
       featureType: 'poi.park',
@@ -416,7 +405,7 @@ const PublicTransportMap = ({
     {
       featureType: 'transit.station',
       elementType: 'geometry',
-      stylers: [{ color: '#3a4762' }],
+      stylers: [{ color: '#3a4762', visibility: 'on' }],
     },
     {
       featureType: 'water',
