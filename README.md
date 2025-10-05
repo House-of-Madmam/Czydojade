@@ -24,6 +24,13 @@ Demo: https://www.youtube.com/watch?v=zQZRO522nz4
 
 🚀 **CzyDojade** sprawia, że codzienny dojazd jest bezpieczniejszy, szybszy i mniej stresujący.
 
+## Authors
+- Arya Ravi
+- Diana Górska
+- Andrzej Fiedler
+- Michał Szczygieł
+- Michał Cieślar
+- Michał Matoga
 
 ## Setup
 
