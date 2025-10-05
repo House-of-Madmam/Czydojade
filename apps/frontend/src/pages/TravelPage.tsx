@@ -77,7 +77,6 @@ export default function TravelPage() {
     }
   }, []);
 
-
   // Ładowanie przystanków przy montowaniu komponentu
   useEffect(() => {
     loadNearbyStops();
@@ -94,18 +93,14 @@ export default function TravelPage() {
 
     try {
       // Znajdź przystanki w pobliżu interpolowanych punktów trasy
-      const interpolatedResult = await getInterpolatedRoutePoints(
-        origin,
-        destination,
-        100
-      );
+      const interpolatedResult = await getInterpolatedRoutePoints(origin, destination, 100);
 
       if (interpolatedResult.success && interpolatedResult.points) {
-        const nearStops = allStops.filter(stop => {
+        const nearStops = allStops.filter((stop) => {
           const proximity = isPointNearInterpolatedRoute(
             { lat: stop.latitude, lng: stop.longitude },
             interpolatedResult.points!,
-            200 // 200 metrów od trasy
+            200, // 200 metrów od trasy
           );
           return proximity.isNear;
         });
@@ -116,8 +111,10 @@ export default function TravelPage() {
 
         // Wyświetl szczegóły przystanków w pobliżu
         console.log('📍 Przystanki w pobliżu trasy:');
-        nearStops.forEach(stop => {
-          console.log(`  ${stop.name} (${stop.type}) - lat:${stop.latitude.toFixed(6)}, lng:${stop.longitude.toFixed(6)}`);
+        nearStops.forEach((stop) => {
+          console.log(
+            `  ${stop.name} (${stop.type}) - lat:${stop.latitude.toFixed(6)}, lng:${stop.longitude.toFixed(6)}`,
+          );
         });
       }
     } catch (error) {
@@ -130,46 +127,49 @@ export default function TravelPage() {
     setRouteInfo(null);
   }, []);
 
-  const handleRouteCalculated = useCallback(async (info: RouteInfo) => {
-    setRouteInfo(info);
-    setShowRouteDetails(true);
+  const handleRouteCalculated = useCallback(
+    async (info: RouteInfo) => {
+      setRouteInfo(info);
+      setShowRouteDetails(true);
 
-    // Workflow: pobierz gęstszą siatkę punktów co 100 metrów
-    try {
-      const result = await getInterpolatedRoutePoints(
-        origin,
-        destination,
-        100 // punkty co 100 metrów
-      );
+      // Workflow: pobierz gęstszą siatkę punktów co 100 metrów
+      try {
+        const result = await getInterpolatedRoutePoints(
+          origin,
+          destination,
+          100, // punkty co 100 metrów
+        );
 
-      if (result.success && result.points) {
-        console.log(`✅ Uzyskano ${result.points.length} punktów trasy (co 100m)`);
+        if (result.success && result.points) {
+          console.log(`✅ Uzyskano ${result.points.length} punktów trasy (co 100m)`);
 
-        // Wyświetl wszystkie punkty interpolowane
-        console.log('📍 Wszystkie punkty interpolowane:');
-        result.points.forEach((point, index) => {
-          console.log(`  Punkt ${index}: lat=${point.lat().toFixed(6)}, lng=${point.lng().toFixed(6)}`);
-        });
+          // Wyświetl wszystkie punkty interpolowane
+          console.log('📍 Wszystkie punkty interpolowane:');
+          result.points.forEach((point, index) => {
+            console.log(`  Punkt ${index}: lat=${point.lat().toFixed(6)}, lng=${point.lng().toFixed(6)}`);
+          });
 
-        // Przykład: sprawdzenie czy punkt jest w pobliżu gęstszej siatki
-        const testPoint = { lat: 50.0614, lng: 19.9366 };
-        const proximityCheck = isPointNearInterpolatedRoute(testPoint, result.points, 50);
-        console.log('Punkt testowy w pobliżu gęstszej trasy (50m):', proximityCheck);
+          // Przykład: sprawdzenie czy punkt jest w pobliżu gęstszej siatki
+          const testPoint = { lat: 50.0614, lng: 19.9366 };
+          const proximityCheck = isPointNearInterpolatedRoute(testPoint, result.points, 50);
+          console.log('Punkt testowy w pobliżu gęstszej trasy (50m):', proximityCheck);
 
-        // Dodatkowe sprawdzenie z oryginalną funkcją
-        const isNearOriginal = isPointNearRoute(testPoint, info.polylinePath, 100);
-        console.log('Punkt testowy w pobliżu oryginalnej trasy (100m):', isNearOriginal);
+          // Dodatkowe sprawdzenie z oryginalną funkcją
+          const isNearOriginal = isPointNearRoute(testPoint, info.polylinePath, 100);
+          console.log('Punkt testowy w pobliżu oryginalnej trasy (100m):', isNearOriginal);
 
-        // Wyświetl również oryginalne punkty trasy dla porównania
-        console.log('📍 Oryginalne punkty trasy (z Directions API):');
-        info.polylinePath.forEach((point, index) => {
-          console.log(`  Oryginalny punkt ${index}: lat=${point.lat().toFixed(6)}, lng=${point.lng().toFixed(6)}`);
-        });
+          // Wyświetl również oryginalne punkty trasy dla porównania
+          console.log('📍 Oryginalne punkty trasy (z Directions API):');
+          info.polylinePath.forEach((point, index) => {
+            console.log(`  Oryginalny punkt ${index}: lat=${point.lat().toFixed(6)}, lng=${point.lng().toFixed(6)}`);
+          });
+        }
+      } catch (error) {
+        console.error('Błąd podczas interpolacji punktów:', error);
       }
-    } catch (error) {
-      console.error('Błąd podczas interpolacji punktów:', error);
-    }
-  }, [origin, destination]);
+    },
+    [origin, destination],
+  );
 
   if (!config.googleMapsApiKey) {
     return (
@@ -183,7 +183,8 @@ export default function TravelPage() {
           <div className="text-center p-8">
             <h2 className="text-xl font-semibold text-gray-300 mb-4">Brak klucza API Google Maps</h2>
             <p className="text-gray-400">
-              Dodaj <code className="bg-gray-700 px-2 py-1 rounded text-gray-300">VITE_GOOGLE_MAPS_API_KEY</code> do pliku <code className="bg-gray-700 px-2 py-1 rounded text-gray-300">.env</code>
+              Dodaj <code className="bg-gray-700 px-2 py-1 rounded text-gray-300">VITE_GOOGLE_MAPS_API_KEY</code> do
+              pliku <code className="bg-gray-700 px-2 py-1 rounded text-gray-300">.env</code>
             </p>
           </div>
         </div>
@@ -197,11 +198,11 @@ export default function TravelPage() {
       <div className="bg-gray-900 border-b border-gray-700 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-white mb-4">Twoja podróż</h1>
-          
+
           {/* Route Input Form */}
-          <div className="w-full">
+          <div className="w-full flex justify-center align-middle">
             {/* Desktop layout (>=750px) */}
-            <div className="hidden min-[750px]:flex flex-row gap-3">
+            <div className="hidden min-[750px]:flex flex-row gap-3 w-full">
               <LocationInput
                 value={searchOrigin}
                 onChange={setSearchOrigin}
@@ -215,7 +216,7 @@ export default function TravelPage() {
               />
 
               {/* Swap button - horizontal on desktop */}
-              <div className="flex items-end justify-center px-2 mt-[23px]">
+              <div className="flex items-center justify-center px-2 pt-5">
                 <button
                   onClick={() => {
                     const tempOrigin = searchOrigin;
@@ -262,7 +263,7 @@ export default function TravelPage() {
                 enableGeolocation={false}
               />
 
-              <div className="flex items-end gap-2 mt-[23px]">
+              <div className="flex items-center gap-2 mt-[23px]">
                 <button
                   onClick={handleSearch}
                   disabled={!searchOrigin || !searchDestination}
@@ -282,79 +283,71 @@ export default function TravelPage() {
             </div>
 
             {/* Mobile layout (<750px) */}
-            <div className="flex min-[750px]:hidden flex-col gap-3">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <LocationInput
-                    value={searchOrigin}
-                    onChange={setSearchOrigin}
-                    placeholder="np. Rynek Główny, Kraków lub nazwa przystanku"
-                    label="Punkt początkowy"
-                    suggestions={originSuggestions}
-                    showSuggestions={showOriginSuggestions}
-                    onShowSuggestions={setShowOriginSuggestions}
-                    onSuggestionsChange={setOriginSuggestions}
-                    enableGeolocation={true}
-                  />
-                </div>
+            <div className="grid grid-cols-[3fr_auto] grid-rows-3  min-[750px]:hidden w-full gap-3">
+              <div className="flex-1 ">
+                <LocationInput
+                  value={searchOrigin}
+                  onChange={setSearchOrigin}
+                  placeholder="np. Rynek Główny, Kraków lub nazwa przystanku"
+                  label="Punkt początkowy"
+                  suggestions={originSuggestions}
+                  showSuggestions={showOriginSuggestions}
+                  onShowSuggestions={setShowOriginSuggestions}
+                  onSuggestionsChange={setOriginSuggestions}
+                  enableGeolocation={true}
+                />
+              </div>
 
-                {/* Swap button - vertical on mobile */}
-                <div className="flex items-center justify-center w-12">
-                  <button
-                    onClick={() => {
-                      const tempOrigin = searchOrigin;
-                      setSearchOrigin(searchDestination);
-                      setSearchDestination(tempOrigin);
-                    }}
-                    className="flex items-center justify-center w-10 h-16 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30"
-                    title="Zamień miejscami"
-                    type="button"
+              {/* Swap button - vertical on mobile */}
+              <div className="flex items-center justify-center w-12 row-span-2">
+                <button
+                  onClick={() => {
+                    const tempOrigin = searchOrigin;
+                    setSearchOrigin(searchDestination);
+                    setSearchDestination(tempOrigin);
+                  }}
+                  className="flex items-center justify-center w-10 h-16 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30"
+                  title="Zamień miejscami"
+                  type="button"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M7 16l4 4 4-4M17 8l-4-4-4 4"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M12 20V4"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                    <path
+                      d="M7 16l4 4 4-4M17 8l-4-4-4 4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12 20V4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 col-start-1 row-start-2">
+                <LocationInput
+                  value={searchDestination}
+                  onChange={setSearchDestination}
+                  placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
+                  label="Punkt końcowy"
+                  suggestions={destinationSuggestions}
+                  showSuggestions={showDestinationSuggestions}
+                  onShowSuggestions={setShowDestinationSuggestions}
+                  onSuggestionsChange={setDestinationSuggestions}
+                  enableGeolocation={false}
+                />
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <LocationInput
-                    value={searchDestination}
-                    onChange={setSearchDestination}
-                    placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
-                    label="Punkt końcowy"
-                    suggestions={destinationSuggestions}
-                    showSuggestions={showDestinationSuggestions}
-                    onShowSuggestions={setShowDestinationSuggestions}
-                    onSuggestionsChange={setDestinationSuggestions}
-                    enableGeolocation={false}
-                  />
-                </div>
-
-                {/* Swap button placeholder for alignment */}
-                <div className="w-12"></div>
-              </div>
-
-              <div className="flex items-end gap-2 mt-[23px]">
+              <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={handleSearch}
                   disabled={!searchOrigin || !searchDestination}
@@ -498,7 +491,10 @@ export default function TravelPage() {
             {/* Steps */}
             <div className="overflow-y-auto flex-1 p-4 space-y-4">
               {routeInfo?.steps?.map((step, index) => (
-                <div key={index} className="border-l-4 border-gray-600 pl-4 pb-4">
+                <div
+                  key={index}
+                  className="border-l-4 border-gray-600 pl-4 pb-4"
+                >
                   {step.transitDetails ? (
                     // Krok transportu publicznego
                     <div className="space-y-2">
@@ -511,15 +507,24 @@ export default function TravelPage() {
                             {step.transitDetails.vehicle} - {step.transitDetails.headsign}
                           </div>
                           <div className="text-sm text-gray-300 mt-1">
-                            <div>🚏 <strong>Wsiądź:</strong> {step.transitDetails.departureStop}</div>
-                            <div className="ml-4 text-xs text-gray-400">Odjazd: {step.transitDetails.departureTime}</div>
+                            <div>
+                              🚏 <strong>Wsiądź:</strong> {step.transitDetails.departureStop}
+                            </div>
+                            <div className="ml-4 text-xs text-gray-400">
+                              Odjazd: {step.transitDetails.departureTime}
+                            </div>
                           </div>
                           <div className="text-sm text-gray-400 my-1">
-                            ↓ {step.transitDetails.numStops} {step.transitDetails.numStops === 1 ? 'przystanek' : 'przystanki'} ({step.duration})
+                            ↓ {step.transitDetails.numStops}{' '}
+                            {step.transitDetails.numStops === 1 ? 'przystanek' : 'przystanki'} ({step.duration})
                           </div>
                           <div className="text-sm text-gray-300">
-                            <div>🚏 <strong>Wysiądź:</strong> {step.transitDetails.arrivalStop}</div>
-                            <div className="ml-4 text-xs text-gray-400">Przyjazd: {step.transitDetails.arrivalTime}</div>
+                            <div>
+                              🚏 <strong>Wysiądź:</strong> {step.transitDetails.arrivalStop}
+                            </div>
+                            <div className="ml-4 text-xs text-gray-400">
+                              Przyjazd: {step.transitDetails.arrivalTime}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -527,7 +532,10 @@ export default function TravelPage() {
                   ) : (
                     // Krok pieszy
                     <div className="space-y-1">
-                      <div className="text-sm text-gray-300" dangerouslySetInnerHTML={{ __html: step.instruction }} />
+                      <div
+                        className="text-sm text-gray-300"
+                        dangerouslySetInnerHTML={{ __html: step.instruction }}
+                      />
                       <div className="text-xs text-gray-400">
                         🚶 {step.distance} • {step.duration}
                       </div>
@@ -552,5 +560,3 @@ export default function TravelPage() {
     </div>
   );
 }
-
-
