@@ -1,9 +1,9 @@
 import { and, asc, between, count, eq, ilike, type SQL } from 'drizzle-orm';
 
 import type { Database } from '../../../../infrastructure/database/database.ts';
-import { stops } from '../../../../infrastructure/database/schema.ts';
+import { lineStops, stops } from '../../../../infrastructure/database/schema.ts';
 import type { ListStopsFilters, PaginatedStops, StopRepository } from '../../domain/repositories/stopRepository.ts';
-import type { Stop } from '../../domain/types/stop.ts';
+import type { LineStop, Stop } from '../../domain/types/stop.ts';
 
 export class StopRepositoryImpl implements StopRepository {
   private readonly database: Database;
@@ -69,6 +69,23 @@ export class StopRepositoryImpl implements StopRepository {
       data,
       total,
     };
+  }
+
+  public async listByLine(lineId: string): Promise<LineStop[]> {
+    const rows = await this.database.db
+      .select({
+        stop: stops,
+        sequence: lineStops.sequence,
+      })
+      .from(lineStops)
+      .innerJoin(stops, eq(lineStops.stopId, stops.id))
+      .where(eq(lineStops.lineId, lineId))
+      .orderBy(asc(lineStops.sequence));
+
+    return rows.map((row) => ({
+      sequence: Number(row.sequence),
+      stop: this.mapStop(row.stop),
+    }));
   }
 
   public async findById(id: string): Promise<Stop | null> {

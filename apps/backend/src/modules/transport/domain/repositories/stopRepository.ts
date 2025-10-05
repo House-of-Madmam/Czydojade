@@ -1,4 +1,4 @@
-import type { Stop, StopType } from '../types/stop.ts';
+import type { LineStop, Stop, StopType } from '../types/stop.ts';
 
 export interface ListStopsFilters {
   readonly type?: StopType | undefined;
@@ -17,5 +17,6 @@ export interface PaginatedStops {
 
 export interface StopRepository {
   list(filters: ListStopsFilters): Promise<PaginatedStops>;
+  listByLine(lineId: string): Promise<LineStop[]>;
   findById(id: string): Promise<Stop | null>;
 }

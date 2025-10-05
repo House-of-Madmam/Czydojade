@@ -46,6 +46,12 @@ export class LineRepositoryImpl implements LineRepository {
     };
   }
 
+  public async findById(id: string): Promise<Line | null> {
+    const [row] = await this.database.db.select().from(lines).where(eq(lines.id, id)).limit(1);
+
+    return row ? this.mapLine(row) : null;
+  }
+
   private mapLine(row: typeof lines.$inferSelect): Line {
     return {
       id: row.id,
