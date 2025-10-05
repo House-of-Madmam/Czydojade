@@ -24,14 +24,14 @@
 
 ## Endpointy
 
-- GET /lines - lista linii, filtry: typ, nazwa (czyli numer)
-- GET /stops - lista przystanków filtry: typ, nazwa, lat/lon + promień
-- GET /lines/{line_id}/stops - lista przystanków na linii
-- GET /incidents - lista incydentów, filtry: linia, przystanek, aktywne, priorytet
-- POST /incidents - dodanie incydentu
-- POST /incidents/{incident_id}/vote - głosowanie na incydent
-- POST /subscriptions/line - dodanie subskrypcji linii
-- POST /subscriptions/area - dodanie subskrypcji obszaru
-- GET /subscriptions/line - lista subskrypcji linii użytkownika
-- GET /subscriptions/area - lista subskrypcji obszaru użytkownika
-- DELETE /subscriptions/{subscription_id} - usunięcie subskrypcji
+- [x] GET /lines - lista linii, filtry: typ, nazwa (czyli numer)
+- [x] GET /stops - lista przystanków filtry: typ, nazwa, lat/lon + promień
+- [x] GET /lines/{line_id}/stops - lista przystanków na linii
+- [x] GET /incidents - lista incydentów, filtry: linia, przystanek, aktywne, priorytet
+- [x] POST /incidents - dodanie incydentu
+- [x] POST /incidents/{incident_id}/vote - głosowanie na incydent
+- [ ] POST /subscriptions/line - dodanie subskrypcji linii
+- [ ] POST /subscriptions/area - dodanie subskrypcji obszaru
+- [ ] GET /subscriptions/line - lista subskrypcji linii użytkownika
+- [ ] GET /subscriptions/area - lista subskrypcji obszaru użytkownika
+- [ ] DELETE /subscriptions/{subscription_id} - usunięcie subskrypcji
