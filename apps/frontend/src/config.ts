@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const appConfig = {
-  backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
+  backendUrl: import.meta.env.VITE_BACKEND_URL || 'https://czydojade-backend.fly.dev',
   googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   googleMapsMapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '',
 };

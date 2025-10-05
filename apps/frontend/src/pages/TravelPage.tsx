@@ -37,7 +37,7 @@ export default function TravelPage() {
   const [locationError, setLocationError] = useState<string>('');
   const [showReportModal, setShowReportModal] = useState(false);
   const [incidents, setIncidents] = useState<IncidentWithVotes[]>([]);
-  const [showIncidents] = useState(true); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [showIncidents] = useState(true);
 
   const handleSearch = () => {
     if (searchOrigin && searchDestination) {
@@ -104,10 +104,13 @@ export default function TravelPage() {
   }, []);
 
   // Obsługa zmiany widoku mapy
-  const handleViewChange = useCallback((bounds: google.maps.LatLngBounds) => {
-    const viewBounds = calculateViewBounds(bounds);
-    loadIncidentsInView(viewBounds.center.lat, viewBounds.center.lng, viewBounds.radiusMeters);
-  }, [loadIncidentsInView]);
+  const handleViewChange = useCallback(
+    (bounds: google.maps.LatLngBounds) => {
+      const viewBounds = calculateViewBounds(bounds);
+      loadIncidentsInView(viewBounds.center.lat, viewBounds.center.lng, viewBounds.radiusMeters);
+    },
+    [loadIncidentsInView],
+  );
 
   // Ładowanie przystanków przy montowaniu komponentu
   useEffect(() => {

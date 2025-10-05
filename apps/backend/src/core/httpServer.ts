@@ -252,7 +252,6 @@ export class HttpServer {
   }
 
   private async registerRoutes(): Promise<void> {
-    // const s3Service = new S3Service(S3ClientFactory.create(this.config.aws), this.config.aws.bucketName);
     const tokenService = new TokenService(this.config);
 
     await this.fastifyServer.register(userRoutes, {
