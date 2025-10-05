@@ -10,22 +10,20 @@ export default function Footer() {
       className="bg-black border-t border-white/10 text-white py-16 mt-auto"
       aria-label="Footer"
     >
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:justify-center md:items-center gap-12 px-6">
-        <div className="flex justify-center items-center md:w-1/3 min-h-[120px]">
+      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:justify-center lg:items-center gap-8 lg:gap-10">
+        <div className="flex justify-center items-center lg:w-1/3 min-h-[80px] lg:min-h-[120px]">
           <Link
             to="/"
             className="flex items-center mb-4 transform hover:scale-105 transition-transform duration-300"
           >
-            <img
-              src="/logo.svg"
-              alt="CzyDojade Logo"
-              className="h-20 w-auto filter brightness-0 invert drop-shadow-2xl"
-            />
+            <img src="/logo.svg" alt="CzyDojade Logo" className="h-16 w-auto filter brightness-0 invert" />
           </Link>
         </div>
 
-        <div className="md:w-1/3 md:flex md:justify-end">
-          <div className="flex flex-row gap-16">
+        <div className="w-full flex justify-center md:w-1/3 md:flex md:justify-end">
+
+        <div className="flex flex-row gap-16">
+
             {/* Account Section */}
             <div>
               <h3 className="text-lg font-bold mb-5 text-white">Konto</h3>
@@ -46,13 +44,21 @@ export default function Footer() {
                 >
                   Rejestracja
                 </Button>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => navigate('/about#faq')}
+                  className="text-sm text-gray-400 hover:text-white transition-colors justify-start p-0 h-auto"
+                >
+                  FAQ
+                </Button>
               </div>
             </div>
 
             {/* Contact Section */}
             <div>
-              <h3 className="text-lg font-bold mb-5 text-white">Kontakt</h3>
-              <div className="space-y-4 text-sm">
+              <h3 className="text-lg font-bold mb-4 text-white">Kontakt</h3>
+              <div className="space-y-3 text-sm">
                 <div className="flex items-center gap-3 text-gray-400">
                   <Mail className="h-4 w-4 text-white" />
                   <a
@@ -82,7 +88,7 @@ export default function Footer() {
                     Cracow, Poland
                   </a>
                 </div>
-                <div className="flex items-center gap-4 pt-4">
+                <div className="flex items-center gap-4 pt-3">
                   <a
                     href="https://facebook.com/czydojade"
                     target="_blank"

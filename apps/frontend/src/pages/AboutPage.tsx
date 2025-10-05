@@ -106,7 +106,7 @@ export default function AboutPage() {
         </div>
 
         {/* FAQ Section */}
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700 p-6 sm:p-8 md:p-10">
+        <div id="faq" className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700 p-6 sm:p-8 md:p-10">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8">
             Najczęściej zadawane pytania
           </h2>

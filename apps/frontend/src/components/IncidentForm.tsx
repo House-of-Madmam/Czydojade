@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/Form';
 import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { reportIncident } from '@/api/queries/reportIncident';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -13,6 +12,8 @@ import { IncidentPriority, IncidentType } from '@/api/types/incident';
 import BinaryToggleGroup from './ui/BinaryToggleGroup';
 import GeolocationStatus from './GeolocationStatus';
 import { store } from '@/store';
+import StopPicker from './StopPicker';
+import LinePicker from './LinePicker';
 
 const formSchema = z.object({
   description: z.string().max(1000).optional(),
@@ -31,21 +32,9 @@ interface Props {
   onSuccess?: () => void;
 }
 
-//TODO: replace placeholders
-const nearbyStops = [
-  { uuid: '550e8400-e29b-41d4-a716-446655440000', label: 'Stop 1' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440001', label: 'Stop 2' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440002', label: 'Stop 3' },
-];
-
-const tramLines = [
-  { uuid: '550e8400-e29b-41d4-a716-446655440003', label: 'Line A' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440004', label: 'Line B' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440005', label: 'Line C' },
-];
-
 export default function IncidentForm({ onSuccess }: Props) {
   const [useLocation, setUseLocation] = useState(true);
+  const [isSubmitted, setIsSubmitted] = useState(false); // Track submission success
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,7 +52,7 @@ export default function IncidentForm({ onSuccess }: Props) {
 
   async function onSubmit(values: FormValues) {
     try {
-      const {latitude, longitude} = store.getState().geolocation;
+      const { latitude, longitude } = store.getState().geolocation;
       if (useLocation && latitude !== null && longitude !== null) {
         values.latitude = latitude.toString();
         values.longitude = longitude.toString();
@@ -82,6 +71,7 @@ export default function IncidentForm({ onSuccess }: Props) {
 
       await reportIncident(sanitizedValues);
 
+      setIsSubmitted(true); // Mark as submitted
       onSuccess?.();
     } catch (error) {
       form.setError('root', {
@@ -107,39 +97,24 @@ export default function IncidentForm({ onSuccess }: Props) {
           />
           {useLocation ? (
             <>
-            <FormField
-              control={form.control}
-              name="lineId"
-              render={({ field }) => (
-                <>
-                <GeolocationStatus />
-                <FormItem>
-                  <FormLabel>Tram line</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a tram line" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tramLines.map(({ uuid, label }) => (
-                          <SelectItem
-                            key={uuid}
-                            value={uuid}
-                          >
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-                </>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="lineId"
+                render={({ field }) => (
+                  <>
+                    <GeolocationStatus />
+                    <FormItem>
+                      <FormLabel>Line</FormLabel>
+                      <FormControl>
+                        <LinePicker
+                          onSelect={(line) => field.onChange(line.id)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </>
+                )}
+              />
             </>
           ) : (
             <FormField
@@ -149,24 +124,10 @@ export default function IncidentForm({ onSuccess }: Props) {
                 <FormItem>
                   <FormLabel>Stop</FormLabel>
                   <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a stop" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {nearbyStops.map(({ uuid, label }) => (
-                          <SelectItem
-                            key={uuid}
-                            value={uuid}
-                          >
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <StopPicker
+                      onSelect={(stop) => field.onChange(stop.id)}
+                      radiusMeters={300}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -254,12 +215,17 @@ export default function IncidentForm({ onSuccess }: Props) {
           <Button
             type="submit"
             className="w-full h-11 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:text-gray-500 font-medium transition-all duration-200 shadow-sm hover:shadow-md mt-6"
-            disabled={!form.formState.isValid || form.formState.isSubmitting}
+            disabled={!form.formState.isValid || form.formState.isSubmitting || isSubmitted} // Disable after submission
           >
             {form.formState.isSubmitting ? 'Submitting...' : 'Report Incident'}
           </Button>
         </form>
       </Form>
+      {isSubmitted && (
+        <div className="text-green-600 text-sm mt-3 text-center bg-green-50 border border-green-200 rounded-lg p-3">
+          Thank you for your report!
+        </div>
+      )}
       {form.formState.errors.root && (
         <div className="text-red-600 text-sm mt-3 text-center bg-red-50 border border-red-200 rounded-lg p-3">
           {form.formState.errors.root.message}

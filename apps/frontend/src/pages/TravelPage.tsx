@@ -1,7 +1,8 @@
 import { APIProvider } from '@vis.gl/react-google-maps';
 import PublicTransportMap, { RouteInfo, isPointNearRoute } from '../components/PublicTransportMap';
+import LocationInput from '../components/LocationInput';
 import { isPointNearInterpolatedRoute, getInterpolatedRoutePoints } from '../utils/polylineUtils';
-import { getStops, getNearbyStops, searchStopsByName, type Stop } from '../api/queries/getStops';
+import { getStops, getNearbyStops, type Stop } from '../api/queries/getStops';
 import { config } from '../config';
 import { useState, useCallback, useEffect } from 'react';
 
@@ -42,10 +43,6 @@ export default function TravelPage() {
     setShowRouteDetails(false);
     setStopsNearRoute([]);
     setShowStops(false);
-    setOriginSuggestions([]);
-    setDestinationSuggestions([]);
-    setShowOriginSuggestions(false);
-    setShowDestinationSuggestions(false);
   };
 
   // Ładowanie przystanków w okolicy użytkownika przy starcie
@@ -80,58 +77,6 @@ export default function TravelPage() {
     }
   }, []);
 
-  // Wyszukiwanie przystanków po nazwie dla autouzupełniania
-  const searchStopsForAutocomplete = useCallback(async (query: string): Promise<Stop[]> => {
-    if (!query.trim()) return [];
-
-    try {
-      return await searchStopsByName(query, 10);
-    } catch (error) {
-      console.error('Błąd podczas wyszukiwania przystanków:', error);
-      return [];
-    }
-  }, []);
-
-  // Obsługa zmiany tekstu w polu origin
-  const handleOriginChange = useCallback(async (value: string) => {
-    setSearchOrigin(value);
-    if (value.length >= 2) {
-      const suggestions = await searchStopsForAutocomplete(value);
-      setOriginSuggestions(suggestions);
-      setShowOriginSuggestions(suggestions.length > 0);
-    } else {
-      setOriginSuggestions([]);
-      setShowOriginSuggestions(false);
-    }
-  }, [searchStopsForAutocomplete]);
-
-  // Obsługa zmiany tekstu w polu destination
-  const handleDestinationChange = useCallback(async (value: string) => {
-    setSearchDestination(value);
-    if (value.length >= 2) {
-      const suggestions = await searchStopsForAutocomplete(value);
-      setDestinationSuggestions(suggestions);
-      setShowDestinationSuggestions(suggestions.length > 0);
-    } else {
-      setDestinationSuggestions([]);
-      setShowDestinationSuggestions(false);
-    }
-  }, [searchStopsForAutocomplete]);
-
-  // Wybór sugestii przystanku
-  const selectStopSuggestion = useCallback((stop: Stop, field: 'origin' | 'destination') => {
-    const stopAddress = `${stop.name}, Kraków`; // Dodaj Kraków dla lepszego wyszukiwania
-
-    if (field === 'origin') {
-      setSearchOrigin(stopAddress);
-      setOrigin(stopAddress);
-      setShowOriginSuggestions(false);
-    } else {
-      setSearchDestination(stopAddress);
-      setDestination(stopAddress);
-      setShowDestinationSuggestions(false);
-    }
-  }, []);
 
   // Ładowanie przystanków przy montowaniu komponentu
   useEffect(() => {
@@ -228,17 +173,17 @@ export default function TravelPage() {
 
   if (!config.googleMapsApiKey) {
     return (
-      <div className="min-h-screen bg-gray-100">
-        <div className="bg-white shadow-sm">
+      <div className="min-h-screen bg-black">
+        <div className="bg-gray-900 border-b border-gray-700 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold text-gray-800">Twoja podróż</h1>
+            <h1 className="text-2xl font-bold text-white">Twoja podróż</h1>
           </div>
         </div>
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <div className="text-center p-8">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Brak klucza API Google Maps</h2>
-            <p className="text-gray-600">
-              Dodaj <code className="bg-gray-200 px-2 py-1 rounded">VITE_GOOGLE_MAPS_API_KEY</code> do pliku <code className="bg-gray-200 px-2 py-1 rounded">.env</code>
+            <h2 className="text-xl font-semibold text-gray-300 mb-4">Brak klucza API Google Maps</h2>
+            <p className="text-gray-400">
+              Dodaj <code className="bg-gray-700 px-2 py-1 rounded text-gray-300">VITE_GOOGLE_MAPS_API_KEY</code> do pliku <code className="bg-gray-700 px-2 py-1 rounded text-gray-300">.env</code>
             </p>
           </div>
         </div>
@@ -247,127 +192,192 @@ export default function TravelPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-black">
       {/* Header with Route Form */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-gray-900 border-b border-gray-700 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Twoja podróż</h1>
+          <h1 className="text-2xl font-bold text-white mb-4">Twoja podróż</h1>
           
           {/* Route Input Form */}
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Punkt początkowy
-              </label>
-              <input
-                type="text"
+          <div className="w-full">
+            {/* Desktop layout (>=750px) */}
+            <div className="hidden min-[750px]:flex flex-row gap-3">
+              <LocationInput
                 value={searchOrigin}
-                onChange={(e) => handleOriginChange(e.target.value)}
+                onChange={setSearchOrigin}
                 placeholder="np. Rynek Główny, Kraków lub nazwa przystanku"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                onBlur={() => setTimeout(() => setShowOriginSuggestions(false), 200)}
-                onFocus={() => {
-                  if (originSuggestions.length > 0) {
-                    setShowOriginSuggestions(true);
-                  }
-                }}
+                label="Punkt początkowy"
+                suggestions={originSuggestions}
+                showSuggestions={showOriginSuggestions}
+                onShowSuggestions={setShowOriginSuggestions}
+                onSuggestionsChange={setOriginSuggestions}
+                enableGeolocation={true}
               />
 
-              {/* Dropdown z sugestiami przystanków - Origin */}
-              {showOriginSuggestions && originSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
-                  {originSuggestions.map((stop) => (
-                    <button
-                      key={stop.id}
-                      onClick={() => selectStopSuggestion(stop, 'origin')}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="font-medium text-gray-900">{stop.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {stop.latitude.toFixed(4)}, {stop.longitude.toFixed(4)}
-                        </div>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        stop.type === 'bus' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {stop.type === 'bus' ? '🚌' : '🚊'} {stop.type}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Punkt końcowy
-              </label>
-              <input
-                type="text"
-                value={searchDestination}
-                onChange={(e) => handleDestinationChange(e.target.value)}
-                placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                onBlur={() => setTimeout(() => setShowDestinationSuggestions(false), 200)}
-                onFocus={() => {
-                  if (destinationSuggestions.length > 0) {
-                    setShowDestinationSuggestions(true);
-                  }
-                }}
-              />
-
-              {/* Dropdown z sugestiami przystanków - Destination */}
-              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
-                  {destinationSuggestions.map((stop) => (
-                    <button
-                      key={stop.id}
-                      onClick={() => selectStopSuggestion(stop, 'destination')}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="font-medium text-gray-900">{stop.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {stop.latitude.toFixed(4)}, {stop.longitude.toFixed(4)}
-                        </div>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        stop.type === 'bus' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {stop.type === 'bus' ? '🚌' : '🚊'} {stop.type}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-end gap-2">
-              <button
-                onClick={handleSearch}
-                disabled={!searchOrigin || !searchDestination}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
-              >
-                Szukaj trasy
-              </button>
-              {(origin || destination || searchOrigin || searchDestination) && (
+              {/* Swap button - horizontal on desktop */}
+              <div className="flex items-end justify-center px-2 mt-[23px]">
                 <button
-                  onClick={handleClear}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  onClick={() => {
+                    const tempOrigin = searchOrigin;
+                    setSearchOrigin(searchDestination);
+                    setSearchDestination(tempOrigin);
+                  }}
+                  className="flex items-center justify-center px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30"
+                  title="Zamień miejscami"
+                  type="button"
                 >
-                  Wyczyść
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M16 17l4-4-4-4M8 7l-4 4 4 4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M20 12H4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </button>
-              )}
+              </div>
+
+              <LocationInput
+                value={searchDestination}
+                onChange={setSearchDestination}
+                placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
+                label="Punkt końcowy"
+                suggestions={destinationSuggestions}
+                showSuggestions={showDestinationSuggestions}
+                onShowSuggestions={setShowDestinationSuggestions}
+                onSuggestionsChange={setDestinationSuggestions}
+                enableGeolocation={false}
+              />
+
+              <div className="flex items-end gap-2 mt-[23px]">
+                <button
+                  onClick={handleSearch}
+                  disabled={!searchOrigin || !searchDestination}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
+                >
+                  Szukaj trasy
+                </button>
+                {(origin || destination || searchOrigin || searchDestination) && (
+                  <button
+                    onClick={handleClear}
+                    className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    Wyczyść
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile layout (<750px) */}
+            <div className="flex min-[750px]:hidden flex-col gap-3">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <LocationInput
+                    value={searchOrigin}
+                    onChange={setSearchOrigin}
+                    placeholder="np. Rynek Główny, Kraków lub nazwa przystanku"
+                    label="Punkt początkowy"
+                    suggestions={originSuggestions}
+                    showSuggestions={showOriginSuggestions}
+                    onShowSuggestions={setShowOriginSuggestions}
+                    onSuggestionsChange={setOriginSuggestions}
+                    enableGeolocation={true}
+                  />
+                </div>
+
+                {/* Swap button - vertical on mobile */}
+                <div className="flex items-center justify-center w-12">
+                  <button
+                    onClick={() => {
+                      const tempOrigin = searchOrigin;
+                      setSearchOrigin(searchDestination);
+                      setSearchDestination(tempOrigin);
+                    }}
+                    className="flex items-center justify-center w-10 h-16 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30"
+                    title="Zamień miejscami"
+                    type="button"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M7 16l4 4 4-4M17 8l-4-4-4 4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M12 20V4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <LocationInput
+                    value={searchDestination}
+                    onChange={setSearchDestination}
+                    placeholder="np. Dworzec Główny, Kraków lub nazwa przystanku"
+                    label="Punkt końcowy"
+                    suggestions={destinationSuggestions}
+                    showSuggestions={showDestinationSuggestions}
+                    onShowSuggestions={setShowDestinationSuggestions}
+                    onSuggestionsChange={setDestinationSuggestions}
+                    enableGeolocation={false}
+                  />
+                </div>
+
+                {/* Swap button placeholder for alignment */}
+                <div className="w-12"></div>
+              </div>
+
+              <div className="flex items-end gap-2 mt-[23px]">
+                <button
+                  onClick={handleSearch}
+                  disabled={!searchOrigin || !searchDestination}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
+                >
+                  Szukaj trasy
+                </button>
+                {(origin || destination || searchOrigin || searchDestination) && (
+                  <button
+                    onClick={handleClear}
+                    className="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    Wyczyść
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Loading indicator */}
           {stopsLoading && (
-            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-blue-800 text-sm flex items-center gap-2">
+            <div className="mt-3 p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
+              <p className="text-blue-300 text-sm flex items-center gap-2">
                 <span className="animate-spin">⏳</span>
                 Pobieranie przystanków w okolicy...
               </p>
@@ -376,8 +386,8 @@ export default function TravelPage() {
 
           {/* Location error */}
           {locationError && (
-            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <p className="text-orange-800 text-sm">
+            <div className="mt-3 p-3 bg-orange-900/30 border border-orange-700 rounded-lg">
+              <p className="text-orange-300 text-sm">
                 📍 {locationError}
                 <br />
                 <span className="text-xs">Używam podstawowych danych przystanków.</span>
@@ -387,8 +397,8 @@ export default function TravelPage() {
 
           {/* Success message */}
           {!stopsLoading && allStops.length > 0 && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-800 text-sm flex items-center gap-2">
+            <div className="mt-3 p-3 bg-green-900/30 border border-green-700 rounded-lg">
+              <p className="text-green-300 text-sm flex items-center gap-2">
                 ✅ Załadowano {allStops.length} przystanków
                 {userLocation && (
                   <span className="text-xs">
@@ -416,7 +426,7 @@ export default function TravelPage() {
                     className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 ${
                       showStops
                         ? 'bg-orange-600 text-white hover:bg-orange-700'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
                     }`}
                   >
                     {showStops ? '👁️' : '🙈'} {showStops ? 'Ukryj' : 'Pokaż'} przystanki ({allStops.length})
@@ -427,8 +437,8 @@ export default function TravelPage() {
           )}
 
           {stopsNearRoute.length > 0 && (
-            <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-              <p className="text-purple-800 text-sm">
+            <div className="mt-3 p-3 bg-purple-900/30 border border-purple-700 rounded-lg">
+              <p className="text-purple-300 text-sm">
                 🎯 Znaleziono <strong>{stopsNearRoute.length}</strong> przystanków w promieniu 200m od trasy
               </p>
             </div>
@@ -436,8 +446,8 @@ export default function TravelPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm">{error}</p>
+            <div className="mt-3 p-3 bg-red-900/30 border border-red-700 rounded-lg">
+              <p className="text-red-300 text-sm">{error}</p>
             </div>
           )}
         </div>
@@ -459,28 +469,28 @@ export default function TravelPage() {
 
         {/* Route Details Panel */}
         {routeInfo && showRouteDetails && (
-          <div className="absolute top-4 right-4 w-96 bg-white rounded-lg shadow-xl max-h-[calc(100vh-240px)] overflow-hidden flex flex-col z-10">
+          <div className="absolute top-4 right-4 w-96 bg-gray-800 rounded-lg shadow-xl max-h-[calc(100vh-240px)] overflow-hidden flex flex-col z-10 border border-gray-700">
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
-              <h2 className="font-bold text-lg text-gray-800">Szczegóły trasy</h2>
-              <button 
+            <div className="p-4 border-b border-gray-600 flex justify-between items-center bg-gray-700">
+              <h2 className="font-bold text-lg text-white">Szczegóły trasy</h2>
+              <button
                 onClick={() => setShowRouteDetails(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                className="text-gray-400 hover:text-white text-2xl leading-none"
               >
                 ×
               </button>
             </div>
 
             {/* Summary */}
-            <div className="p-4 border-b border-gray-200 bg-blue-50">
+            <div className="p-4 border-b border-gray-600 bg-gray-700">
               <div className="flex justify-between text-sm">
                 <div>
-                  <span className="text-gray-600">Czas:</span>
-                  <span className="ml-2 font-semibold text-blue-600">{routeInfo?.totalDuration}</span>
+                  <span className="text-gray-300">Czas:</span>
+                  <span className="ml-2 font-semibold text-blue-400">{routeInfo?.totalDuration}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Dystans:</span>
-                  <span className="ml-2 font-semibold text-blue-600">{routeInfo?.totalDistance}</span>
+                  <span className="text-gray-300">Dystans:</span>
+                  <span className="ml-2 font-semibold text-blue-400">{routeInfo?.totalDistance}</span>
                 </div>
               </div>
             </div>
@@ -488,7 +498,7 @@ export default function TravelPage() {
             {/* Steps */}
             <div className="overflow-y-auto flex-1 p-4 space-y-4">
               {routeInfo?.steps?.map((step, index) => (
-                <div key={index} className="border-l-4 border-gray-300 pl-4 pb-4">
+                <div key={index} className="border-l-4 border-gray-600 pl-4 pb-4">
                   {step.transitDetails ? (
                     // Krok transportu publicznego
                     <div className="space-y-2">
@@ -497,19 +507,19 @@ export default function TravelPage() {
                           {step.transitDetails.line}
                         </span>
                         <div className="flex-1">
-                          <div className="font-semibold text-gray-800">
+                          <div className="font-semibold text-white">
                             {step.transitDetails.vehicle} - {step.transitDetails.headsign}
                           </div>
-                          <div className="text-sm text-gray-600 mt-1">
+                          <div className="text-sm text-gray-300 mt-1">
                             <div>🚏 <strong>Wsiądź:</strong> {step.transitDetails.departureStop}</div>
-                            <div className="ml-4 text-xs text-gray-500">Odjazd: {step.transitDetails.departureTime}</div>
+                            <div className="ml-4 text-xs text-gray-400">Odjazd: {step.transitDetails.departureTime}</div>
                           </div>
-                          <div className="text-sm text-gray-500 my-1">
+                          <div className="text-sm text-gray-400 my-1">
                             ↓ {step.transitDetails.numStops} {step.transitDetails.numStops === 1 ? 'przystanek' : 'przystanki'} ({step.duration})
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-300">
                             <div>🚏 <strong>Wysiądź:</strong> {step.transitDetails.arrivalStop}</div>
-                            <div className="ml-4 text-xs text-gray-500">Przyjazd: {step.transitDetails.arrivalTime}</div>
+                            <div className="ml-4 text-xs text-gray-400">Przyjazd: {step.transitDetails.arrivalTime}</div>
                           </div>
                         </div>
                       </div>
@@ -517,8 +527,8 @@ export default function TravelPage() {
                   ) : (
                     // Krok pieszy
                     <div className="space-y-1">
-                      <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: step.instruction }} />
-                      <div className="text-xs text-gray-500">
+                      <div className="text-sm text-gray-300" dangerouslySetInnerHTML={{ __html: step.instruction }} />
+                      <div className="text-xs text-gray-400">
                         🚶 {step.distance} • {step.duration}
                       </div>
                     </div>
@@ -533,7 +543,7 @@ export default function TravelPage() {
         {routeInfo && !showRouteDetails && (
           <button
             onClick={() => setShowRouteDetails(true)}
-            className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors z-10"
+            className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors z-10 border border-blue-500"
           >
             Pokaż szczegóły trasy
           </button>

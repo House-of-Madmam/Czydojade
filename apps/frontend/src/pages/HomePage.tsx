@@ -1,7 +1,18 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useContext, useEffect } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import AnimatedMap from '../components/AnimatedMap';
 
 export default function HomePage() {
+  const { userData, userDataInitialized } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userDataInitialized && userData) {
+      navigate('/travel');
+    }
+  }, [userData, userDataInitialized, navigate]);
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-black">
       {/* Full Screen Animated Map */}
