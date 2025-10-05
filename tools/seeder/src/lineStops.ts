@@ -78,7 +78,7 @@ let stopsToInsertWithExternalIds: StopWithExternalId[] = [];
 interface ApiRoute {
   alerts: unknown[];
   authority: string;
-  directions: string[];
+  directions?: string[];
   id: string;
   name: string;
 }
@@ -144,7 +144,7 @@ async function seedLines(): Promise<void> {
 
     const uniqueTramLines = new Map<string, ApiRoute>();
     for (const route of tramRoutes) {
-      if (!uniqueTramLines.has(route.name.trim()) && route.directions.length > 0) {
+      if (!uniqueTramLines.has(route.name.trim()) && route.directions && route.directions.length > 0) {
         uniqueTramLines.set(route.name.trim(), route);
       }
     }
@@ -162,14 +162,14 @@ async function seedLines(): Promise<void> {
         externalId: route.id,
         number: route.name.trim(),
         type: 'tram' as const,
-        directions: route.directions,
+        directions: route.directions && route.directions.length > 0 ? route.directions : [],
       })),
       ...Array.from(uniqueBusLines.values()).map((route) => ({
         id: uuidv7(),
         externalId: route.id,
         number: route.name.trim(),
         type: 'bus' as const,
-        directions: route.directions.length > 0 ? route.directions : [],
+        directions: route.directions && route.directions.length > 0 ? route.directions : [],
       })),
     ];
     const linesToInsert = linesToInsertWithExternalIds.map(({ externalId, ...line }) => line);
