@@ -13,6 +13,7 @@ import { IncidentPriority, IncidentType } from '@/api/types/incident';
 import BinaryToggleGroup from './ui/BinaryToggleGroup';
 import GeolocationStatus from './GeolocationStatus';
 import { store } from '@/store';
+import StopPicker from './StopPicker';
 
 const formSchema = z.object({
   description: z.string().max(1000).optional(),
@@ -30,13 +31,6 @@ type FormValues = z.infer<typeof formSchema>;
 interface Props {
   onSuccess?: () => void;
 }
-
-//TODO: replace placeholders
-const nearbyStops = [
-  { uuid: '550e8400-e29b-41d4-a716-446655440000', label: 'Stop 1' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440001', label: 'Stop 2' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440002', label: 'Stop 3' },
-];
 
 const tramLines = [
   { uuid: '550e8400-e29b-41d4-a716-446655440003', label: 'Line A' },
@@ -63,7 +57,7 @@ export default function IncidentForm({ onSuccess }: Props) {
 
   async function onSubmit(values: FormValues) {
     try {
-      const {latitude, longitude} = store.getState().geolocation;
+      const { latitude, longitude } = store.getState().geolocation;
       if (useLocation && latitude !== null && longitude !== null) {
         values.latitude = latitude.toString();
         values.longitude = longitude.toString();
@@ -107,39 +101,39 @@ export default function IncidentForm({ onSuccess }: Props) {
           />
           {useLocation ? (
             <>
-            <FormField
-              control={form.control}
-              name="lineId"
-              render={({ field }) => (
-                <>
-                <GeolocationStatus />
-                <FormItem>
-                  <FormLabel>Tram line</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a tram line" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tramLines.map(({ uuid, label }) => (
-                          <SelectItem
-                            key={uuid}
-                            value={uuid}
-                          >
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-                </>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="lineId"
+                render={({ field }) => (
+                  <>
+                    <GeolocationStatus />
+                    <FormItem>
+                      <FormLabel>Tram line</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a tram line" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tramLines.map(({ uuid, label }) => (
+                              <SelectItem
+                                key={uuid}
+                                value={uuid}
+                              >
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </>
+                )}
+              />
             </>
           ) : (
             <FormField
@@ -149,24 +143,10 @@ export default function IncidentForm({ onSuccess }: Props) {
                 <FormItem>
                   <FormLabel>Stop</FormLabel>
                   <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a stop" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {nearbyStops.map(({ uuid, label }) => (
-                          <SelectItem
-                            key={uuid}
-                            value={uuid}
-                          >
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <StopPicker
+                      onSelect={(stop) => field.onChange(stop.id)}
+                      radiusMeters={300}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
