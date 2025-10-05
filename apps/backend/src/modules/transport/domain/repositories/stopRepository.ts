@@ -6,8 +6,8 @@ export interface ListStopsFilters {
   readonly latitude?: number | undefined;
   readonly longitude?: number | undefined;
   readonly radiusMeters?: number | undefined;
-  readonly page?: number | undefined;
-  readonly pageSize?: number | undefined;
+  readonly page: number;
+  readonly pageSize: number;
 }
 
 export interface PaginatedStops {

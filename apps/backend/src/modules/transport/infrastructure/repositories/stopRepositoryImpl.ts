@@ -44,24 +44,23 @@ export class StopRepositoryImpl implements StopRepository {
       conditions.push(between(stops.longitude, minLon, maxLon));
     }
 
-    // Pagination parameters - defaults and validation handled at API layer
-    const page = filters.page ?? 1;
-    const pageSize = filters.pageSize ?? 5;
-    const offset = (page - 1) * pageSize;
+    const offset = (filters.page - 1) * filters.pageSize;
 
-    // Build base queries
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Execute count query
     const countQuery = this.database.db.select({ count: count() }).from(stops);
-    const countResult = await (whereClause ? countQuery.where(whereClause) : countQuery);
+    const filteredCountQuery = whereClause ? countQuery.where(whereClause) : countQuery;
+    const countResult = await filteredCountQuery;
     const total = countResult[0]?.count ?? 0;
 
-    // Execute data query with pagination
     const dataQuery = this.database.db.select().from(stops);
     const filteredQuery = whereClause ? dataQuery.where(whereClause) : dataQuery;
 
-    const result = await filteredQuery.orderBy(asc(stops.name)).limit(pageSize).offset(offset);
+    console.log({ conditions });
+
+    const result = await filteredQuery.orderBy(asc(stops.name)).limit(filters.pageSize).offset(offset);
+
+    console.log({ result });
 
     const data = result.map((row) => this.mapStop(row));
 

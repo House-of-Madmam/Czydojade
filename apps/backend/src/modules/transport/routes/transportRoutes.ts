@@ -7,9 +7,9 @@ import type { Database } from '../../../infrastructure/database/database.ts';
 import { ListLinesAction } from '../application/actions/listLinesAction.ts';
 import { ListStopsAction } from '../application/actions/listStopsAction.ts';
 import type { LineRepository, ListLinesFilters, PaginatedLines } from '../domain/repositories/lineRepository.ts';
-import type { ListStopsFilters, PaginatedStops } from '../domain/repositories/stopRepository.ts';
+import type { ListStopsFilters } from '../domain/repositories/stopRepository.ts';
 import type { Line } from '../domain/types/line.ts';
-import { stopTypes, type Stop } from '../domain/types/stop.ts';
+import { type Stop } from '../domain/types/stop.ts';
 import { LineRepositoryImpl } from '../infrastructure/repositories/lineRepositoryImpl.ts';
 import { StopRepositoryImpl } from '../infrastructure/repositories/stopRepositoryImpl.ts';
 
@@ -97,7 +97,7 @@ export async function transportRoutes(
         latitude: Type.Optional(Type.Number()),
         longitude: Type.Optional(Type.Number()),
         radiusMeters: Type.Optional(Type.Integer({ minimum: 1 })),
-        page: Type.Optional(Type.Integer({ minimum: 1, default: 1 })),
+        page: Type.Optional(Type.Integer({ minimum: 1 })),
         pageSize: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
       }),
       response: {
@@ -105,20 +105,22 @@ export async function transportRoutes(
       },
     },
     handler: async (request, reply) => {
-      const query = request.query as ListStopsFilters;
+      const { name, latitude, longitude, radiusMeters, page, pageSize, type } = request.query;
 
       const filters: ListStopsFilters = {
-        ...query,
-        page: query.page ?? 1,
-        pageSize: query.pageSize ?? 10,
-        type: query.type ?? stopTypes.tram,
+        name,
+        latitude,
+        longitude,
+        radiusMeters,
+        page: page ?? 1,
+        pageSize: pageSize ?? 10,
+        type,
       };
 
-      const paginatedStops: PaginatedStops = await listStopsAction.execute(filters);
-      const mappedData: StopResponse[] = paginatedStops.data.map((stop: Stop) => mapStopToResponse(stop));
+      const paginatedStops = await listStopsAction.execute(filters);
 
       return reply.send({
-        data: mappedData,
+        data: paginatedStops.data.map((stop: Stop) => mapStopToResponse(stop)),
         total: paginatedStops.total,
       });
     },
