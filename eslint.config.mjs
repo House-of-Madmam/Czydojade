@@ -8,7 +8,7 @@ export default tseslint.config(
     files: ['**/*.ts'],
   },
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/*.mjs', '**/*.js', 'drizzle.config.ts'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/*.mjs', '**/*.js'],
   },
   {
     languageOptions: {

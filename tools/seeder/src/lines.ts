@@ -28,7 +28,7 @@ const db = drizzle(pool);
 interface ApiRoute {
   alerts: unknown[];
   authority: string;
-  directions: string[];
+  directions?: string[];
   id: string;
   name: string;
   shortName: string;
@@ -52,7 +52,7 @@ async function fetchLinesFromApi(): Promise<ApiRoute[]> {
   }
 
   const data = (await response.json()) as ApiRouteResponse;
-  console.log(`Fetched ${data.routes.length} routes from API`);
+  console.log(`Fetched ${data.routes.length.toString()} routes from API`);
 
   return data.routes;
 }
@@ -66,44 +66,44 @@ async function seedLines(): Promise<void> {
     const tramRoutes = allRoutes.filter((route) => route.authority === 'MPK');
     const busRoutes = allRoutes.filter((route) => route.authority !== 'MPK');
 
-    console.log(`Found ${tramRoutes.length} tram routes and ${busRoutes.length} bus routes`);
+    console.log(`Found ${tramRoutes.length.toString()} tram routes and ${busRoutes.length.toString()} bus routes`);
 
     const uniqueTramLines = new Map<string, ApiRoute>();
     for (const route of tramRoutes) {
-      if (!uniqueTramLines.has(route.shortName) && route.directions && route.directions.length > 0) {
-        uniqueTramLines.set(route.shortName, route);
+      if (!uniqueTramLines.has(route.name) && route.directions && route.directions.length > 0) {
+        uniqueTramLines.set(route.name, route);
       }
     }
 
     const uniqueBusLines = new Map<string, ApiRoute>();
     for (const route of busRoutes) {
-      if (!uniqueBusLines.has(route.shortName)) {
-        uniqueBusLines.set(route.shortName, route);
+      if (!uniqueBusLines.has(route.name)) {
+        uniqueBusLines.set(route.name, route);
       }
     }
 
     const linesToInsert = [
       ...Array.from(uniqueTramLines.values()).map((route) => ({
         id: uuidv7(),
-        number: route.shortName,
+        number: route.name,
         type: 'tram' as const,
-        directions: route.directions,
+        directions: route.directions && route.directions.length > 0 ? route.directions : [],
       })),
       ...Array.from(uniqueBusLines.values()).map((route) => ({
         id: uuidv7(),
-        number: route.shortName,
+        number: route.name,
         type: 'bus' as const,
         directions: route.directions && route.directions.length > 0 ? route.directions : [],
       })),
     ];
 
     console.log(
-      `Inserting ${linesToInsert.length} unique lines (${uniqueTramLines.size} trams, ${uniqueBusLines.size} buses)...`,
+      `Inserting ${linesToInsert.length.toString()} unique lines (${uniqueTramLines.size.toString()} trams, ${uniqueBusLines.size.toString()} buses)...`,
     );
 
     await db.insert(lines).values(linesToInsert);
 
-    console.log(`Successfully seeded ${linesToInsert.length} lines.`);
+    console.log(`Successfully seeded ${linesToInsert.length.toString()} lines.`);
   } catch (error) {
     console.error('Error inserting lines:', error);
     throw error;

@@ -5,7 +5,6 @@ import type { LineStop } from '../../domain/types/stop.ts';
 
 export class ListLineStopsAction {
   private readonly lineRepository: LineRepository;
-
   private readonly stopRepository: StopRepository;
 
   public constructor(lineRepository: LineRepository, stopRepository: StopRepository) {

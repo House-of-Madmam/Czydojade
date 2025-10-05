@@ -326,7 +326,7 @@ const PublicTransportMap = ({
   );
 };
 
-// Funkcja pomocnicza: sprawdza czy punkt jest w pobliżu trasy
+// eslint-disable-next-line react-refresh/only-export-components
 export const isPointNearRoute = (
   point: { lat: number; lng: number },
   routePath: google.maps.LatLng[],

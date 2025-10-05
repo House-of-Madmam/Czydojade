@@ -8,7 +8,7 @@
     "build:dev": "tsc --build tsconfig.json",
     "test": "cross-env NODE_ENV=test vitest --config vitest.config.js",
     "test:ci": "npm run test -- --run",
-    "lint": "eslint .",
+    "lint": "eslint . -c ../../eslint.config.mjs",
     "lint:fix": "npm run lint -- --fix",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

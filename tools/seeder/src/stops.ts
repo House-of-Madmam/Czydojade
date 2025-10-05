@@ -46,7 +46,6 @@ async function fetchStopsFromApi(type: 'tram' | 'bus'): Promise<ApiStop[]> {
   }
 
   const data = (await response.json()) as ApiStop[];
-  console.log(`Fetched ${data.length} ${type} stops from API`);
 
   return data;
 }
@@ -55,23 +54,21 @@ async function seedStops(): Promise<void> {
   console.log('Seeding stops...');
 
   try {
-    // Fetch data from both APIs
     const tramStops = await fetchStopsFromApi('tram');
     const busStops = await fetchStopsFromApi('bus');
 
     // Process tram stops with unique names
     const uniqueTramStops = new Map<string, ApiStop>();
     for (const stop of tramStops) {
-      if (!uniqueTramStops.has(stop.name)) {
-        uniqueTramStops.set(stop.name, stop);
+      if (!uniqueTramStops.has(stop.name.trim())) {
+        uniqueTramStops.set(stop.name.trim(), stop);
       }
     }
 
-    // Process bus stops with unique names
     const uniqueBusStops = new Map<string, ApiStop>();
     for (const stop of busStops) {
-      if (!uniqueBusStops.has(stop.name)) {
-        uniqueBusStops.set(stop.name, stop);
+      if (!uniqueBusStops.has(stop.name.trim())) {
+        uniqueBusStops.set(stop.name.trim(), stop);
       }
     }
 
@@ -79,14 +76,14 @@ async function seedStops(): Promise<void> {
     const stopsToInsert = [
       ...Array.from(uniqueTramStops.values()).map((stop) => ({
         id: uuidv7(),
-        name: stop.name,
+        name: stop.name.trim(),
         latitude: stop.lat.toString(),
         longitude: stop.lon.toString(),
         type: 'tram' as const,
       })),
       ...Array.from(uniqueBusStops.values()).map((stop) => ({
         id: uuidv7(),
-        name: stop.name,
+        name: stop.name.trim(),
         latitude: stop.lat.toString(),
         longitude: stop.lon.toString(),
         type: 'bus' as const,
@@ -94,7 +91,7 @@ async function seedStops(): Promise<void> {
     ];
 
     console.log(
-      `Inserting ${stopsToInsert.length} unique stops (${uniqueTramStops.size} trams, ${uniqueBusStops.size} buses)...`,
+      `Inserting ${stopsToInsert.length.toString()} unique stops (${uniqueTramStops.size.toString()} trams, ${uniqueBusStops.size.toString()} buses)...`,
     );
 
     // Insert stops in batches to avoid potential issues with large datasets
@@ -102,10 +99,12 @@ async function seedStops(): Promise<void> {
     for (let i = 0; i < stopsToInsert.length; i += batchSize) {
       const batch = stopsToInsert.slice(i, i + batchSize);
       await db.insert(stops).values(batch);
-      console.log(`Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(stopsToInsert.length / batchSize)}`);
+      console.log(
+        `Inserted batch ${(Math.floor(i / batchSize) + 1).toString()}/${Math.ceil(stopsToInsert.length / batchSize).toString()}`,
+      );
     }
 
-    console.log(`Successfully seeded ${stopsToInsert.length} stops.`);
+    console.log(`Successfully seeded ${stopsToInsert.length.toString()} stops.`);
   } catch (error) {
     console.error('Error inserting stops:', error);
     throw error;

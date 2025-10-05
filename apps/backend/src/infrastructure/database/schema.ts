@@ -60,7 +60,7 @@ export const lineStops = pgTable(
     stopId: uuid('stop_id')
       .notNull()
       .references(() => stops.id, { onDelete: 'cascade' }),
-    sequence: integer('sequence').notNull(), // kolejność
+    sequence: integer('sequence').notNull(),
   },
   (table) => [index('line_stops_line_id_idx').on(table.lineId), index('line_stops_stop_id_idx').on(table.stopId)],
 );
@@ -73,11 +73,10 @@ export const incidents = pgTable(
     type: incidentTypeEnum('type').notNull(),
     priority: priorityEnum('priority').notNull(),
     startTime: timestamp('start_time').notNull().defaultNow(),
-    endTime: timestamp('end_time'),
-    // Foreign keys - ALBO linia ALBO przystanek
-    lineId: uuid('line_id').references(() => lines.id, { onDelete: 'cascade' }),
+    endTime: timestamp('end_time').notNull(),
     stopId: uuid('stop_id').references(() => stops.id, { onDelete: 'cascade' }),
-    // Opcjonalna lokalizacja geograficzna
+    lineId: uuid('line_id').references(() => lines.id, { onDelete: 'cascade' }),
+    lineDirection: text('line_direction'),
     latitude: decimal('latitude', { precision: 10, scale: 7 }),
     longitude: decimal('longitude', { precision: 10, scale: 7 }),
     createdBy: uuid('created_by')

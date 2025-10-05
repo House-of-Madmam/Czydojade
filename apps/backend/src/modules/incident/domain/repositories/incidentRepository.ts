@@ -5,6 +5,7 @@ export interface CreateIncidentData {
   readonly type: IncidentType;
   readonly priority: Priority;
   readonly lineId?: string | undefined;
+  readonly lineDirection?: string | undefined;
   readonly stopId?: string | undefined;
   readonly latitude?: string | undefined;
   readonly longitude?: string | undefined;
@@ -13,11 +14,13 @@ export interface CreateIncidentData {
 
 export interface FindIncidentsFilters {
   readonly lineId?: string | undefined;
+  readonly lineDirection?: string | undefined;
   readonly stopId?: string | undefined;
   readonly isActive?: boolean | undefined;
   readonly priority?: Priority | undefined;
-  readonly latitude?: string | undefined;
-  readonly longitude?: string | undefined;
+  readonly latitude?: number | undefined;
+  readonly longitude?: number | undefined;
+  readonly radiusMeters?: number | undefined;
   readonly page?: number | undefined;
   readonly limit?: number | undefined;
 }
@@ -33,4 +36,5 @@ export interface IncidentRepository {
   findMany(filters: FindIncidentsFilters): Promise<Incident[]>;
   findManyWithVotes(filters: FindIncidentsFilters): Promise<PaginatedIncidents>;
   close(id: string): Promise<void>;
+  extendEndTime(id: string, hoursToAdd: number): Promise<void>;
 }

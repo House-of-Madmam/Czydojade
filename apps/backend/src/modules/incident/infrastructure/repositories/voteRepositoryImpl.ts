@@ -50,6 +50,15 @@ export class VoteRepositoryImpl implements VoteRepository {
     return result.length;
   }
 
+  public async countConfirmVotesByIncident(incidentId: string): Promise<number> {
+    const result = await this.database.db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.incidentId, incidentId), eq(votes.voteType, 'confirm')));
+
+    return result.length;
+  }
+
   private mapToVote(dbVote: typeof votes.$inferSelect): Vote {
     const vote: Vote = {
       id: dbVote.id,

@@ -10,4 +10,5 @@ export interface VoteRepository {
   create(voteData: CreateVoteData): Promise<Vote>;
   findByUserAndIncident(userId: string, incidentId: string): Promise<Vote | null>;
   countRejectVotesByIncident(incidentId: string): Promise<number>;
+  countConfirmVotesByIncident(incidentId: string): Promise<number>;
 }

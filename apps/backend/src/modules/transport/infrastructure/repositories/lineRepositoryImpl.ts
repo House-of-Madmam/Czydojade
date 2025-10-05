@@ -2,8 +2,8 @@ import { and, asc, count, eq, ilike, type SQL } from 'drizzle-orm';
 
 import type { Database } from '../../../../infrastructure/database/database.ts';
 import { lines } from '../../../../infrastructure/database/schema.ts';
-import type { Line } from '../../domain/types/line.ts';
 import type { LineRepository, ListLinesFilters, PaginatedLines } from '../../domain/repositories/lineRepository.ts';
+import type { Line } from '../../domain/types/line.ts';
 
 export class LineRepositoryImpl implements LineRepository {
   private readonly database: Database;
@@ -57,7 +57,7 @@ export class LineRepositoryImpl implements LineRepository {
       id: row.id,
       number: row.number,
       type: row.type,
-      directions: row.directions ?? [],
+      directions: row.directions,
     };
   }
 }
