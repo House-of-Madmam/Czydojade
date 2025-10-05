@@ -14,6 +14,7 @@ interface AutocompleteProps {
   placeholder?: string;
   value?: string;
   loading?: boolean;
+  forceClose?: boolean;
 }
 
 function Autocomplete({
@@ -23,6 +24,7 @@ function Autocomplete({
   placeholder = 'Type to search...',
   value = '',
   loading = false,
+  forceClose = false,
 }: AutocompleteProps) {
   const [inputValue, setInputValue] = useState<string>(value);
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(options);
@@ -128,7 +130,7 @@ function Autocomplete({
           <Spinner size="sm" />
         </div>
       </div>
-      {isOpen && filteredOptions.length > 0 && (
+      {isOpen && filteredOptions.length > 0 && !forceClose && (
         <div
           ref={dropdownRef}
           className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"

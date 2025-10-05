@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/Form';
 import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { reportIncident } from '@/api/queries/reportIncident';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -14,6 +13,7 @@ import BinaryToggleGroup from './ui/BinaryToggleGroup';
 import GeolocationStatus from './GeolocationStatus';
 import { store } from '@/store';
 import StopPicker from './StopPicker';
+import LinePicker from './LinePicker';
 
 const formSchema = z.object({
   description: z.string().max(1000).optional(),
@@ -31,12 +31,6 @@ type FormValues = z.infer<typeof formSchema>;
 interface Props {
   onSuccess?: () => void;
 }
-
-const tramLines = [
-  { uuid: '550e8400-e29b-41d4-a716-446655440003', label: 'Line A' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440004', label: 'Line B' },
-  { uuid: '550e8400-e29b-41d4-a716-446655440005', label: 'Line C' },
-];
 
 export default function IncidentForm({ onSuccess }: Props) {
   const [useLocation, setUseLocation] = useState(true);
@@ -108,26 +102,11 @@ export default function IncidentForm({ onSuccess }: Props) {
                   <>
                     <GeolocationStatus />
                     <FormItem>
-                      <FormLabel>Tram line</FormLabel>
+                      <FormLabel>Line</FormLabel>
                       <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a tram line" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tramLines.map(({ uuid, label }) => (
-                              <SelectItem
-                                key={uuid}
-                                value={uuid}
-                              >
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <LinePicker
+                          onSelect={(line) => field.onChange(line.id)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

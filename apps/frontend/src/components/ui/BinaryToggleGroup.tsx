@@ -24,6 +24,7 @@ export default function BinaryToggleGroup({ options, value, onValueChange, class
         {options.map((option) => (
           <button
             key={option.value}
+            type='button'
             className={`px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
               activeValue === option.value
                 ? 'bg-white text-teal-600 shadow-lg shadow-teal-500/10 scale-105'
