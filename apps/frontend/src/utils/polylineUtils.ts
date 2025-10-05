@@ -1,6 +1,24 @@
 // Narzędzia do pracy z polylines i interpolacją punktów
 
 /**
+ * Oblicza odległość między dwoma punktami używając wzoru haversine (bez biblioteki geometry)
+ */
+const calculateDistance = (point1: google.maps.LatLng, point2: google.maps.LatLng): number => {
+  const R = 6371000; // Promień Ziemi w metrach
+  const lat1Rad = (point1.lat() * Math.PI) / 180;
+  const lat2Rad = (point2.lat() * Math.PI) / 180;
+  const deltaLatRad = ((point2.lat() - point1.lat()) * Math.PI) / 180;
+  const deltaLngRad = ((point2.lng() - point1.lng()) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+    Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLngRad / 2) * Math.sin(deltaLngRad / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+};
+
+/**
  * Dekoduje zakodowaną polyline z Google Maps API na tablicę współrzędnych
  */
 export function decodePolyline(encoded: string): google.maps.LatLng[] {
@@ -68,7 +86,7 @@ export function interpolatePointsOnRoute(
 
   while (nextIndex < polylinePoints.length) {
     const nextPoint = polylinePoints[nextIndex];
-    const distanceToNext = google.maps.geometry.spherical.computeDistanceBetween(currentPoint, nextPoint);
+    const distanceToNext = calculateDistance(currentPoint, nextPoint);
 
     if (distanceToNext >= intervalMeters) {
       // Oblicz punkt interpolowany
@@ -107,7 +125,7 @@ export function isPointNearInterpolatedRoute(
   let nearestPoint: google.maps.LatLng | undefined;
 
   for (const routePoint of interpolatedPoints) {
-    const distance = google.maps.geometry.spherical.computeDistanceBetween(
+    const distance = calculateDistance(
       new google.maps.LatLng(point.lat, point.lng),
       routePoint,
     );

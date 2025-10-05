@@ -4,12 +4,20 @@ import LocationInput from '../components/LocationInput';
 import IncidentForm from '../components/IncidentForm';
 import { isPointNearInterpolatedRoute, getInterpolatedRoutePoints } from '../utils/polylineUtils';
 import { getStops, getNearbyStops, type Stop } from '../api/queries/getStops';
+import { getIncidentsInView } from '../api/queries/getIncidents';
+import { type IncidentWithVotes } from '../api/types/incident';
+import { calculateViewBounds } from '../utils/mapUtils';
 import { config } from '../config';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useContext } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function TravelPage() {
+  const { userData } = useContext(AuthContext);
+  const navigate = useNavigate();
+
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [searchOrigin, setSearchOrigin] = useState('');
@@ -28,6 +36,8 @@ export default function TravelPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string>('');
   const [showReportModal, setShowReportModal] = useState(false);
+  const [incidents, setIncidents] = useState<IncidentWithVotes[]>([]);
+  const [showIncidents] = useState(true); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const handleSearch = () => {
     if (searchOrigin && searchDestination) {
@@ -81,6 +91,24 @@ export default function TravelPage() {
     }
   }, []);
 
+  // Ładowanie incydentów w widoku mapy
+  const loadIncidentsInView = useCallback(async (centerLat: number, centerLng: number, radiusMeters: number) => {
+    try {
+      const incidentsData = await getIncidentsInView(centerLat, centerLng, radiusMeters);
+      setIncidents(incidentsData);
+      console.log(`🚨 Załadowano ${incidentsData.length} incydentów w widoku mapy`);
+    } catch (error) {
+      console.error('Błąd podczas ładowania incydentów:', error);
+      setIncidents([]);
+    }
+  }, []);
+
+  // Obsługa zmiany widoku mapy
+  const handleViewChange = useCallback((bounds: google.maps.LatLngBounds) => {
+    const viewBounds = calculateViewBounds(bounds);
+    loadIncidentsInView(viewBounds.center.lat, viewBounds.center.lng, viewBounds.radiusMeters);
+  }, [loadIncidentsInView]);
+
   // Ładowanie przystanków przy montowaniu komponentu
   useEffect(() => {
     loadNearbyStops();
@@ -130,6 +158,14 @@ export default function TravelPage() {
     setError(errorMessage);
     setRouteInfo(null);
   }, []);
+
+  const handleReportIncident = useCallback(() => {
+    if (!userData) {
+      navigate('/login');
+      return;
+    }
+    setShowReportModal(true);
+  }, [userData, navigate]);
 
   const handleRouteCalculated = useCallback(
     async (info: RouteInfo) => {
@@ -461,6 +497,9 @@ export default function TravelPage() {
             stops={showStops ? allStops : []}
             showStops={showStops}
             stopsNearRoute={stopsNearRoute}
+            incidents={incidents}
+            showIncidents={showIncidents}
+            onViewChange={handleViewChange}
           />
         </APIProvider>
 
@@ -564,7 +603,7 @@ export default function TravelPage() {
         {/* Report Incident Button - Fixed in bottom right */}
         <div className="bottom-4 right-[55px] z-50 fixed">
           <Button
-            onClick={() => setShowReportModal(true)}
+            onClick={handleReportIncident}
             className="bg-red-600 hover:bg-red-700 text-white p-5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 border border-red-500"
             title="Zgłoś wypadek"
           >

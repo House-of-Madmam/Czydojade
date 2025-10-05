@@ -1,6 +1,7 @@
 import { Map, useMap } from '@vis.gl/react-google-maps';
 import { config } from '../config';
 import { useEffect, useRef } from 'react';
+import { IncidentWithVotes, IncidentPriority } from '../api/types/incident';
 
 export interface TransitStep {
   instruction: string;
@@ -41,6 +42,9 @@ interface PublicTransportMapProps {
   stops?: Stop[];
   showStops?: boolean;
   stopsNearRoute?: Stop[];
+  incidents?: IncidentWithVotes[];
+  showIncidents?: boolean;
+  onViewChange?: (bounds: google.maps.LatLngBounds) => void;
 }
 
 const TransitLayer = () => {
@@ -298,6 +302,9 @@ const PublicTransportMap = ({
   stops,
   showStops,
   stopsNearRoute,
+  incidents,
+  showIncidents,
+  onViewChange,
 }: PublicTransportMapProps) => {
   // Dark theme styles for Google Maps
   const darkMapStyles = [
@@ -428,6 +435,7 @@ const PublicTransportMap = ({
         defaultCenter={{ lat: 50.06143, lng: 19.93658 }} // Kraków
         styles={darkMapStyles}
       >
+        <MapViewHandler onViewChange={onViewChange} />
         <TransitLayer />
         {origin && destination && (
           <DirectionsRenderer
@@ -444,9 +452,31 @@ const PublicTransportMap = ({
             stopsNearRoute={stopsNearRoute}
           />
         )}
+        {showIncidents && (
+          <IncidentsMarkers
+            incidents={incidents}
+            showIncidents={showIncidents}
+          />
+        )}
       </Map>
     </div>
   );
+};
+
+// Funkcja pomocnicza do obliczania odległości (bez biblioteki geometry)
+const calculateDistance = (point1: google.maps.LatLng, point2: google.maps.LatLng): number => {
+  const R = 6371000; // Promień Ziemi w metrach
+  const lat1Rad = (point1.lat() * Math.PI) / 180;
+  const lat2Rad = (point2.lat() * Math.PI) / 180;
+  const deltaLatRad = ((point2.lat() - point1.lat()) * Math.PI) / 180;
+  const deltaLngRad = ((point2.lng() - point1.lng()) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+    Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLngRad / 2) * Math.sin(deltaLngRad / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -458,7 +488,7 @@ export const isPointNearRoute = (
   if (!routePath || routePath.length === 0) return false;
 
   for (let i = 0; i < routePath.length - 1; i++) {
-    const distance = google.maps.geometry.spherical.computeDistanceBetween(
+    const distance = calculateDistance(
       new google.maps.LatLng(point.lat, point.lng),
       routePath[i],
     );
@@ -469,6 +499,160 @@ export const isPointNearRoute = (
   }
 
   return false;
+};
+
+const MapViewHandler = ({
+  onViewChange,
+}: {
+  onViewChange?: (bounds: google.maps.LatLngBounds) => void;
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !onViewChange) return;
+
+    const handleViewChange = () => {
+      const bounds = map.getBounds();
+      if (bounds) {
+        onViewChange(bounds);
+      }
+    };
+
+    // Nasłuchuj na zdarzenia zmiany widoku
+    const boundsChangedListener = map.addListener('bounds_changed', handleViewChange);
+    const zoomChangedListener = map.addListener('zoom_changed', handleViewChange);
+
+    // Wywołaj raz na początku
+    handleViewChange();
+
+    return () => {
+      google.maps.event.removeListener(boundsChangedListener);
+      google.maps.event.removeListener(zoomChangedListener);
+    };
+  }, [map, onViewChange]);
+
+  return null;
+};
+
+const IncidentsMarkers = ({
+  incidents,
+  showIncidents,
+}: {
+  incidents?: IncidentWithVotes[];
+  showIncidents?: boolean;
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !showIncidents || !incidents) return;
+
+    const markers: google.maps.Marker[] = [];
+
+    // Funkcja pomocnicza do tworzenia markera incydentu
+    const createIncidentMarker = (incident: IncidentWithVotes) => {
+      // Parsuj współrzędne
+      const lat = parseFloat(incident.latitude || '0');
+      const lng = parseFloat(incident.longitude || '0');
+
+      if (!lat || !lng) return null;
+
+      // Wybierz kolor i ikonę na podstawie priorytetu
+      let markerColor = '#FFA500'; // domyślny - pomarańczowy
+      let priorityText = 'Średni';
+
+      switch (incident.priority) {
+        case IncidentPriority.Low:
+          markerColor = '#00AA00'; // zielony
+          priorityText = 'Niski';
+          break;
+        case IncidentPriority.Medium:
+          markerColor = '#FFA500'; // pomarańczowy
+          priorityText = 'Średni';
+          break;
+        case IncidentPriority.High:
+          markerColor = '#FF4444'; // czerwony
+          priorityText = 'Wysoki';
+          break;
+        case IncidentPriority.Critical:
+          markerColor = '#990000'; // ciemny czerwony
+          priorityText = 'Krytyczny';
+          break;
+      }
+
+      // Sprawdź czy incydent jest aktywny
+      const isActive = incident.endTime ? new Date(incident.endTime) > new Date() : false;
+      const opacity = isActive ? 0.9 : 0.6;
+
+      const marker = new google.maps.Marker({
+        position: { lat, lng },
+        map: map,
+        title: `${incident.type} - ${priorityText}`,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: incident.priority === IncidentPriority.Critical ? 10 : 8,
+          fillColor: markerColor,
+          fillOpacity: opacity,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2,
+        },
+        zIndex: incident.priority === IncidentPriority.Critical ? 2000 : 1500,
+      });
+
+      // Dodaj info window z szczegółami
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="font-family: Arial, sans-serif; max-width: 250px;">
+            <h3 style="margin: 0 0 8px 0; color: ${markerColor}; font-weight: bold;">
+              ${getIncidentTypeLabel(incident.type)}
+            </h3>
+            <p style="margin: 0 0 4px 0;"><strong>Priorytet:</strong> ${priorityText}</p>
+            <p style="margin: 0 0 4px 0;"><strong>Status:</strong> ${isActive ? 'Aktywny' : 'Zakończony'}</p>
+            <p style="margin: 0 0 4px 0;"><strong>Start:</strong> ${new Date(incident.startTime).toLocaleString('pl-PL')}</p>
+            ${incident.endTime ? `<p style="margin: 0 0 4px 0;"><strong>Koniec:</strong> ${new Date(incident.endTime).toLocaleString('pl-PL')}</p>` : ''}
+            ${incident.description ? `<p style="margin: 4px 0;"><strong>Opis:</strong> ${incident.description}</p>` : ''}
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+              Potwierdzenia: ${incident.confirmVotes} | Odrzucenia: ${incident.rejectVotes}
+            </p>
+            ${incident.lineId ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #666;"><strong>Linia:</strong> ${incident.lineId}</p>` : ''}
+          </div>
+        `,
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+      });
+
+      return marker;
+    };
+
+    // Dodaj markery wszystkich incydentów
+    incidents.forEach((incident) => {
+      const marker = createIncidentMarker(incident);
+      if (marker) {
+        markers.push(marker);
+      }
+    });
+
+    return () => {
+      markers.forEach((marker) => marker.setMap(null));
+    };
+  }, [map, incidents, showIncidents]);
+
+  return null;
+};
+
+// Funkcja pomocnicza do tłumaczenia typu incydentu
+const getIncidentTypeLabel = (type: string): string => {
+  switch (type) {
+    case 'vehicleBreakdown':
+      return 'Awaria pojazdu';
+    case 'infrastructureBreakdown':
+      return 'Awaria infrastruktury';
+    case 'dangerInsideVehicle':
+      return 'Zagrożenie w pojeździe';
+    default:
+      return type;
+  }
 };
 
 export default PublicTransportMap;
