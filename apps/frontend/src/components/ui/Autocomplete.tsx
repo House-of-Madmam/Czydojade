@@ -110,7 +110,7 @@ function Autocomplete({
   };
 
   return (
-    <div className="relative w-full max-w-md">
+    <div className="relative w-full">
       <div className="relative">
         <input
           ref={inputRef}
@@ -122,7 +122,7 @@ function Autocomplete({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={cn(
-            'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-black',
+            'border border-gray-300 rounded-md px-3 h-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-black',
             className === 'dark-input' &&
               'bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-white focus:ring-white/20',
             loading && 'pr-10',

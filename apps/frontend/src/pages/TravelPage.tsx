@@ -266,7 +266,7 @@ export default function TravelPage() {
                     setSearchOrigin(searchDestination);
                     setSearchDestination(tempOrigin);
                   }}
-                  className="flex items-center justify-center px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30"
+                  className="flex items-center justify-center px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500/30 cursor-pointer"
                   title="Zamień miejscami"
                   type="button"
                 >
@@ -310,7 +310,7 @@ export default function TravelPage() {
                 <button
                   onClick={handleSearch}
                   disabled={!searchOrigin || !searchDestination}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium cursor-pointer"
                 >
                   Szukaj trasy
                 </button>
@@ -394,7 +394,7 @@ export default function TravelPage() {
                 <button
                   onClick={handleSearch}
                   disabled={!searchOrigin || !searchDestination}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium cursor-pointer"
                 >
                   Szukaj trasy
                 </button>
