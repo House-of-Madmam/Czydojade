@@ -60,7 +60,17 @@ const TransitLayer = () => {
   return null;
 };
 
-const DirectionsRenderer = ({ origin, destination, onError, onRouteCalculated }: { origin: string; destination: string; onError?: (message: string) => void; onRouteCalculated?: (routeInfo: RouteInfo) => void }) => {
+const DirectionsRenderer = ({
+  origin,
+  destination,
+  onError,
+  onRouteCalculated,
+}: {
+  origin: string;
+  destination: string;
+  onError?: (message: string) => void;
+  onRouteCalculated?: (routeInfo: RouteInfo) => void;
+}) => {
   const map = useMap();
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
@@ -115,12 +125,12 @@ const DirectionsRenderer = ({ origin, destination, onError, onRouteCalculated }:
         if (status === 'OK' && result && directionsRendererRef.current) {
           directionsRendererRef.current.setDirections(result);
           onErrorRef.current?.(''); // Clear error on success
-          
+
           // Wyciągnij szczegółowe informacje o trasie
           const route = result.routes[0];
           const leg = route.legs[0];
-          
-          const steps: TransitStep[] = leg.steps.map(step => {
+
+          const steps: TransitStep[] = leg.steps.map((step) => {
             const stepInfo: TransitStep = {
               instruction: step.instructions,
               distance: step.distance?.text || '',
@@ -146,7 +156,7 @@ const DirectionsRenderer = ({ origin, destination, onError, onRouteCalculated }:
 
           // Zbierz wszystkie punkty trasy do polyline
           const polylinePath: google.maps.LatLng[] = [];
-          leg.steps.forEach(step => {
+          leg.steps.forEach((step) => {
             if (step.path) {
               polylinePath.push(...step.path);
             }
@@ -162,14 +172,16 @@ const DirectionsRenderer = ({ origin, destination, onError, onRouteCalculated }:
           onRouteCalculatedRef.current?.(routeInfo);
         } else {
           console.error('Błąd wyznaczania trasy:', status);
-          
+
           let errorMessage = '';
           switch (status) {
             case 'ZERO_RESULTS':
-              errorMessage = 'Nie znaleziono trasy transportem publicznym. Sprawdź, czy adresy są poprawne lub spróbuj innych lokalizacji.';
+              errorMessage =
+                'Nie znaleziono trasy transportem publicznym. Sprawdź, czy adresy są poprawne lub spróbuj innych lokalizacji.';
               break;
             case 'NOT_FOUND':
-              errorMessage = 'Nie można znaleźć jednego z adresów. Sprawdź, czy wpisałeś pełny adres z miastem (np. "Rynek Główny, Kraków").';
+              errorMessage =
+                'Nie można znaleźć jednego z adresów. Sprawdź, czy wpisałeś pełny adres z miastem (np. "Rynek Główny, Kraków").';
               break;
             case 'INVALID_REQUEST':
               errorMessage = 'Nieprawidłowe zapytanie. Upewnij się, że oba adresy są wprowadzone poprawnie.';
@@ -186,17 +198,25 @@ const DirectionsRenderer = ({ origin, destination, onError, onRouteCalculated }:
             default:
               errorMessage = `Błąd: ${status}`;
           }
-          
+
           onErrorRef.current?.(errorMessage);
         }
-      }
+      },
     );
   }, [map, origin, destination]);
 
   return null;
 };
 
-const StopsMarkers = ({ stops, showStops, stopsNearRoute }: { stops?: Stop[]; showStops?: boolean; stopsNearRoute?: Stop[] }) => {
+const StopsMarkers = ({
+  stops,
+  showStops,
+  stopsNearRoute,
+}: {
+  stops?: Stop[];
+  showStops?: boolean;
+  stopsNearRoute?: Stop[];
+}) => {
   const map = useMap();
 
   useEffect(() => {
@@ -213,7 +233,7 @@ const StopsMarkers = ({ stops, showStops, stopsNearRoute }: { stops?: Stop[]; sh
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: isNearRoute ? 8 : 6,
-          fillColor: isNearRoute ? '#FF4444' : (stop.type === 'bus' ? '#00AA00' : '#4444FF'),
+          fillColor: isNearRoute ? '#FF4444' : stop.type === 'bus' ? '#00AA00' : '#4444FF',
           fillOpacity: 0.8,
           strokeColor: '#FFFFFF',
           strokeWeight: 2,
@@ -241,19 +261,18 @@ const StopsMarkers = ({ stops, showStops, stopsNearRoute }: { stops?: Stop[]; sh
     };
 
     // Dodaj markery wszystkich przystanków
-    stops.forEach(stop => {
-      const isNearRoute = stopsNearRoute?.some(nearStop => nearStop.id === stop.id) ?? false;
+    stops.forEach((stop) => {
+      const isNearRoute = stopsNearRoute?.some((nearStop) => nearStop.id === stop.id) ?? false;
       const marker = createMarker(stop, isNearRoute);
       markers.push(marker);
     });
 
     // Dodaj specjalne markery dla przystanków w pobliżu trasy (jeśli nie są już dodane)
     if (stopsNearRoute) {
-      stopsNearRoute.forEach(stop => {
+      stopsNearRoute.forEach((stop) => {
         // Sprawdź czy marker już istnieje
-        const existingMarker = markers.find(marker =>
-          marker.getPosition()?.lat() === stop.latitude &&
-          marker.getPosition()?.lng() === stop.longitude
+        const existingMarker = markers.find(
+          (marker) => marker.getPosition()?.lat() === stop.latitude && marker.getPosition()?.lng() === stop.longitude,
         );
 
         if (!existingMarker) {
@@ -264,14 +283,22 @@ const StopsMarkers = ({ stops, showStops, stopsNearRoute }: { stops?: Stop[]; sh
     }
 
     return () => {
-      markers.forEach(marker => marker.setMap(null));
+      markers.forEach((marker) => marker.setMap(null));
     };
   }, [map, stops, showStops, stopsNearRoute]);
 
   return null;
 };
 
-const PublicTransportMap = ({ origin, destination, onError, onRouteCalculated, stops, showStops, stopsNearRoute }: PublicTransportMapProps) => {
+const PublicTransportMap = ({
+  origin,
+  destination,
+  onError,
+  onRouteCalculated,
+  stops,
+  showStops,
+  stopsNearRoute,
+}: PublicTransportMapProps) => {
   return (
     <Map
       style={{ width: '100%', height: '100%' }}
@@ -280,8 +307,21 @@ const PublicTransportMap = ({ origin, destination, onError, onRouteCalculated, s
       defaultCenter={{ lat: 50.06143, lng: 19.93658 }} // Kraków
     >
       <TransitLayer />
-      {origin && destination && <DirectionsRenderer origin={origin} destination={destination} onError={onError} onRouteCalculated={onRouteCalculated} />}
-      {showStops && <StopsMarkers stops={stops} showStops={showStops} stopsNearRoute={stopsNearRoute} />}
+      {origin && destination && (
+        <DirectionsRenderer
+          origin={origin}
+          destination={destination}
+          onError={onError}
+          onRouteCalculated={onRouteCalculated}
+        />
+      )}
+      {showStops && (
+        <StopsMarkers
+          stops={stops}
+          showStops={showStops}
+          stopsNearRoute={stopsNearRoute}
+        />
+      )}
     </Map>
   );
 };
@@ -290,14 +330,14 @@ const PublicTransportMap = ({ origin, destination, onError, onRouteCalculated, s
 export const isPointNearRoute = (
   point: { lat: number; lng: number },
   routePath: google.maps.LatLng[],
-  maxDistanceMeters: number = 100
+  maxDistanceMeters: number = 100,
 ): boolean => {
   if (!routePath || routePath.length === 0) return false;
 
   for (let i = 0; i < routePath.length - 1; i++) {
     const distance = google.maps.geometry.spherical.computeDistanceBetween(
       new google.maps.LatLng(point.lat, point.lng),
-      routePath[i]
+      routePath[i],
     );
 
     if (distance <= maxDistanceMeters) {
@@ -309,4 +349,3 @@ export const isPointNearRoute = (
 };
 
 export default PublicTransportMap;
-
