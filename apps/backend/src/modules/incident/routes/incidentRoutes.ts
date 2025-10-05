@@ -6,6 +6,8 @@ import { createAuthenticationMiddleware } from '../../../common/auth/authMiddlew
 import type { TokenService } from '../../../common/auth/tokenService.ts';
 import type { LoggerService } from '../../../common/logger/loggerService.ts';
 import type { Database } from '../../../infrastructure/database/database.ts';
+import { LineRepositoryImpl } from '../../transport/infrastructure/repositories/lineRepositoryImpl.ts';
+import { StopRepositoryImpl } from '../../transport/infrastructure/repositories/stopRepositoryImpl.ts';
 import { CreateIncidentAction } from '../application/actions/createIncidentAction.ts';
 import { FindIncidentsAction } from '../application/actions/findIncidentsAction.ts';
 import { VoteOnIncidentAction } from '../application/actions/voteOnIncidentAction.ts';
@@ -35,6 +37,7 @@ const incidentSchema = Type.Object({
   startTime: Type.String({ format: 'date-time' }),
   endTime: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
   lineId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+  lineDirection: Type.Union([Type.String(), Type.Null()]),
   stopId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
   latitude: Type.Union([Type.String(), Type.Null()]),
   longitude: Type.Union([Type.String(), Type.Null()]),
@@ -85,6 +88,7 @@ export async function incidentRoutes(
       startTime: incident.startTime.toISOString(),
       endTime: incident.endTime ? incident.endTime.toISOString() : null,
       lineId: incident.lineId,
+      lineDirection: incident.lineDirection,
       stopId: incident.stopId,
       latitude: incident.latitude,
       longitude: incident.longitude,
@@ -104,6 +108,7 @@ export async function incidentRoutes(
       startTime: incident.startTime.toISOString(),
       endTime: incident.endTime ? incident.endTime.toISOString() : null,
       lineId: incident.lineId,
+      lineDirection: incident.lineDirection,
       stopId: incident.stopId,
       latitude: incident.latitude,
       longitude: incident.longitude,
@@ -130,8 +135,15 @@ export async function incidentRoutes(
 
   const incidentRepository = new IncidentRepositoryImpl(database);
   const voteRepository = new VoteRepositoryImpl(database);
+  const stopRepository = new StopRepositoryImpl(database);
+  const lineRepository = new LineRepositoryImpl(database);
 
-  const createIncidentAction = new CreateIncidentAction(incidentRepository, loggerService);
+  const createIncidentAction = new CreateIncidentAction(
+    incidentRepository,
+    stopRepository,
+    lineRepository,
+    loggerService,
+  );
   const findIncidentsAction = new FindIncidentsAction(incidentRepository);
   const voteOnIncidentAction = new VoteOnIncidentAction(voteRepository, incidentRepository, loggerService);
 
@@ -142,13 +154,15 @@ export async function incidentRoutes(
     schema: {
       querystring: Type.Object({
         lineId: Type.Optional(Type.String({ format: 'uuid' })),
+        lineDirection: Type.Optional(Type.String({ minLength: 1, maxLength: 255 })),
         stopId: Type.Optional(Type.String({ format: 'uuid' })),
         isActive: Type.Optional(Type.Boolean()),
         priority: Type.Optional(
           Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high'), Type.Literal('critical')]),
         ),
-        latitude: Type.Optional(Type.String()),
-        longitude: Type.Optional(Type.String()),
+        latitude: Type.Optional(Type.Number()),
+        longitude: Type.Optional(Type.Number()),
+        radiusMeters: Type.Optional(Type.Integer({ minimum: 1 })),
         page: Type.Optional(Type.Integer({ minimum: 1, default: 1 })),
         limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 10 })),
       }),
@@ -175,6 +189,7 @@ export async function incidentRoutes(
         stopId: Type.Optional(Type.String({ format: 'uuid' })),
         // if stopId is provided, lineId, latitude and longitude are not used
         lineId: Type.Optional(Type.String({ format: 'uuid' })),
+        lineDirection: Type.Optional(Type.String({ minLength: 1, maxLength: 255 })),
         latitude: Type.Optional(Type.String()),
         longitude: Type.Optional(Type.String()),
       }),

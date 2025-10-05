@@ -1,4 +1,4 @@
-import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, between, count, eq, gt, lte, sql } from 'drizzle-orm';
 
 import { UuidService } from '../../../../common/uuid/uuidService.ts';
 import type { Database } from '../../../../infrastructure/database/database.ts';
@@ -19,6 +19,9 @@ export class IncidentRepositoryImpl implements IncidentRepository {
   }
 
   public async create(incidentData: CreateIncidentData): Promise<Incident> {
+    const now = new Date();
+    const endTime = new Date(now.getTime() + 60 * 60 * 1000); // +1 hour
+
     const [newIncident] = await this.database.db
       .insert(incidents)
       .values({
@@ -26,7 +29,10 @@ export class IncidentRepositoryImpl implements IncidentRepository {
         description: incidentData.description ?? null,
         type: incidentData.type,
         priority: incidentData.priority,
+        startTime: now,
+        endTime,
         lineId: incidentData.lineId ?? null,
+        lineDirection: incidentData.lineDirection ?? null,
         stopId: incidentData.stopId ?? null,
         latitude: incidentData.latitude ?? null,
         longitude: incidentData.longitude ?? null,
@@ -59,10 +65,12 @@ export class IncidentRepositoryImpl implements IncidentRepository {
     }
 
     if (filters.isActive !== undefined) {
+      const currentTime = new Date();
+
       if (filters.isActive) {
-        conditions.push(isNull(incidents.endTime));
+        conditions.push(gt(incidents.endTime, currentTime));
       } else {
-        conditions.push(isNotNull(incidents.endTime));
+        conditions.push(lte(incidents.endTime, currentTime));
       }
     }
 
@@ -70,12 +78,29 @@ export class IncidentRepositoryImpl implements IncidentRepository {
       conditions.push(eq(incidents.priority, filters.priority));
     }
 
-    if (filters.latitude) {
-      conditions.push(eq(incidents.latitude, filters.latitude));
+    if (filters.lineDirection) {
+      conditions.push(eq(incidents.lineDirection, filters.lineDirection));
     }
 
-    if (filters.longitude) {
-      conditions.push(eq(incidents.longitude, filters.longitude));
+    if (
+      filters.latitude !== undefined &&
+      filters.longitude !== undefined &&
+      filters.radiusMeters !== undefined &&
+      filters.radiusMeters > 0
+    ) {
+      const lat = filters.latitude;
+      const lon = filters.longitude;
+      const radius = filters.radiusMeters;
+      const latDelta = radius / 111_000;
+      const lonDelta = radius / (111_000 * Math.cos((lat * Math.PI) / 180) || 1);
+
+      const minLat = (lat - latDelta).toString();
+      const maxLat = (lat + latDelta).toString();
+      const minLon = (lon - lonDelta).toString();
+      const maxLon = (lon + lonDelta).toString();
+
+      conditions.push(between(incidents.latitude, minLat, maxLat));
+      conditions.push(between(incidents.longitude, minLon, maxLon));
     }
 
     const result = await this.database.db
@@ -98,15 +123,19 @@ export class IncidentRepositoryImpl implements IncidentRepository {
       conditions.push(eq(incidents.lineId, filters.lineId));
     }
 
+    if (filters.lineDirection) {
+      conditions.push(eq(incidents.lineDirection, filters.lineDirection));
+    }
+
     if (filters.stopId) {
       conditions.push(eq(incidents.stopId, filters.stopId));
     }
 
     if (filters.isActive !== undefined) {
       if (filters.isActive) {
-        conditions.push(isNull(incidents.endTime));
+        conditions.push(gt(incidents.endTime, new Date()));
       } else {
-        conditions.push(isNotNull(incidents.endTime));
+        conditions.push(lte(incidents.endTime, new Date()));
       }
     }
 
@@ -114,12 +143,25 @@ export class IncidentRepositoryImpl implements IncidentRepository {
       conditions.push(eq(incidents.priority, filters.priority));
     }
 
-    if (filters.latitude) {
-      conditions.push(eq(incidents.latitude, filters.latitude));
-    }
+    if (
+      filters.latitude !== undefined &&
+      filters.longitude !== undefined &&
+      filters.radiusMeters !== undefined &&
+      filters.radiusMeters > 0
+    ) {
+      const lat = filters.latitude;
+      const lon = filters.longitude;
+      const radius = filters.radiusMeters;
+      const latDelta = radius / 111_000;
+      const lonDelta = radius / (111_000 * Math.cos((lat * Math.PI) / 180) || 1);
 
-    if (filters.longitude) {
-      conditions.push(eq(incidents.longitude, filters.longitude));
+      const minLat = (lat - latDelta).toString();
+      const maxLat = (lat + latDelta).toString();
+      const minLon = (lon - lonDelta).toString();
+      const maxLon = (lon + lonDelta).toString();
+
+      conditions.push(between(incidents.latitude, minLat, maxLat));
+      conditions.push(between(incidents.longitude, minLon, maxLon));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -163,6 +205,16 @@ export class IncidentRepositoryImpl implements IncidentRepository {
     await this.database.db.update(incidents).set({ endTime: new Date() }).where(eq(incidents.id, id));
   }
 
+  public async extendEndTime(id: string, hoursToAdd: number): Promise<void> {
+    const incident = await this.findById(id);
+    if (!incident || !incident.endTime) {
+      return;
+    }
+
+    const newEndTime = new Date(incident.endTime.getTime() + hoursToAdd * 60 * 60 * 1000);
+    await this.database.db.update(incidents).set({ endTime: newEndTime }).where(eq(incidents.id, id));
+  }
+
   private mapToIncident(dbIncident: typeof incidents.$inferSelect): Incident {
     const incident: Incident = {
       id: dbIncident.id,
@@ -172,6 +224,7 @@ export class IncidentRepositoryImpl implements IncidentRepository {
       startTime: dbIncident.startTime,
       endTime: dbIncident.endTime,
       lineId: dbIncident.lineId,
+      lineDirection: dbIncident.lineDirection,
       stopId: dbIncident.stopId,
       latitude: dbIncident.latitude,
       longitude: dbIncident.longitude,

@@ -23,6 +23,7 @@ export interface Incident {
   readonly startTime: Date;
   readonly endTime: Date | null;
   readonly lineId: string | null;
+  readonly lineDirection: string | null;
   readonly stopId: string | null;
   readonly latitude: string | null;
   readonly longitude: string | null;

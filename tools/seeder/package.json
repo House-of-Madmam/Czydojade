@@ -2,8 +2,8 @@
   "name": "seeder",
   "type": "module",
   "scripts": {
-    "seed": "npm run seed:linesAndStops",
-    "seed:linesAndStops": "node --env-file=.env src/linesAndStops.ts",
+    "seed": "npm run seed:lineStops",
+    "seed:lineStops": "node --env-file=.env src/lineStops.ts",
     "build": "tsc --build",
     "build:dev": "tsc --build",
     "lint": "eslint . -c ../../eslint.config.mjs",

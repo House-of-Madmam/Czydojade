@@ -60,6 +60,7 @@ export const getVehicleTypes = (routeInfo: RouteInfo): string[] => {
 export const isNearAnyStop = (
   _point: { lat: number; lng: number },
   _routeInfo: RouteInfo,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _maxDistanceMeters: number = 100,
 ): { isNear: boolean; nearestStop?: string; distance?: number } => {
   // Ta funkcja wymaga dostępu do współrzędnych przystanków

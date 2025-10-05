@@ -85,6 +85,21 @@ export class VoteOnIncidentAction {
       });
     }
 
+    // Extend incident endTime by 1 hour when confirm votes reach multiples of 3
+    if (payload.voteType === 'confirm') {
+      const confirmCount = await this.voteRepository.countConfirmVotesByIncident(payload.incidentId);
+
+      if (confirmCount % 3 === 0) {
+        await this.incidentRepository.extendEndTime(payload.incidentId, 1);
+
+        this.loggerService.info({
+          message: 'Incident endTime extended by 1 hour due to confirm votes.',
+          incidentId: payload.incidentId,
+          confirmCount,
+        });
+      }
+    }
+
     return vote;
   }
 }
