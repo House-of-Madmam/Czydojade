@@ -99,12 +99,12 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
+            className="space-y-6"
           >
           <BinaryToggleGroup
             options={[
-              { label: 'Use Location', value: 'location' },
-              { label: 'Select Stop', value: 'stop' },
+              { label: 'Użyj lokalizacji', value: 'location' },
+              { label: 'Wybierz przystanek', value: 'stop' },
             ]}
             value={useLocation ? 'location' : 'stop'}
             onValueChange={(event) => setUseLocation(event.target.value === 'location')}
@@ -118,7 +118,7 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
                   <>
                     <GeolocationStatus />
                     <FormItem>
-                      <FormLabel>Line</FormLabel>
+                      <FormLabel className="text-white">Linia</FormLabel>
                       <FormControl>
                         <LinePicker
                           onSelect={(line) => field.onChange(line.id)}
@@ -136,7 +136,7 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
               name="stopId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Stop</FormLabel>
+                  <FormLabel className="text-white">Przystanek</FormLabel>
                   <FormControl>
                     <StopPicker
                       onSelect={(stop) => field.onChange(stop.id)}
@@ -153,22 +153,26 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Type</FormLabel>
+                <FormLabel className="text-white">Typ incydentu</FormLabel>
                 <FormControl>
-                  <div className="space-y-2">
-                    {['vehicleBreakdown', 'infrastructureBreakdown', 'dangerInsideVehicle'].map((option) => (
+                  <div className="space-y-3">
+                    {[
+                      { value: 'vehicleBreakdown', label: 'Awaria pojazdu' },
+                      { value: 'infrastructureBreakdown', label: 'Awaria infrastruktury' },
+                      { value: 'dangerInsideVehicle', label: 'Niebezpieczeństwo w pojeździe' }
+                    ].map((option) => (
                       <label
-                        key={option}
-                        className="flex items-center space-x-2"
+                        key={option.value}
+                        className="flex items-center space-x-3 cursor-pointer hover:bg-gray-800/30 p-2 rounded-lg transition-colors"
                       >
                         <input
                           type="radio"
-                          value={option}
-                          checked={field.value === option}
-                          onChange={() => field.onChange(option)}
-                          className="form-radio"
+                          value={option.value}
+                          checked={field.value === option.value}
+                          onChange={() => field.onChange(option.value)}
+                          className="w-4 h-4 text-white bg-gray-800 border-gray-600 focus:ring-white focus:ring-2"
                         />
-                        <span>{option}</span>
+                        <span className="text-white text-sm">{option.label}</span>
                       </label>
                     ))}
                   </div>
@@ -214,10 +218,11 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel className="text-white">Opis</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Describe the incident"
+                    placeholder="Opisz incydent"
+                    className="bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-white focus:ring-white/20"
                     {...field}
                   />
                 </FormControl>

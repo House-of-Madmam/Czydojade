@@ -15,6 +15,7 @@ interface AutocompleteProps {
   value?: string;
   loading?: boolean;
   forceClose?: boolean;
+  className?: string;
 }
 
 function Autocomplete({
@@ -25,6 +26,7 @@ function Autocomplete({
   value = '',
   loading = false,
   forceClose = false,
+  className = '',
 }: AutocompleteProps) {
   const [inputValue, setInputValue] = useState<string>(value);
   const [filteredOptions, setFilteredOptions] = useState<Option[]>(options);
@@ -119,7 +121,8 @@ function Autocomplete({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={cn(
-            'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full',
+            'border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-black',
+            className === 'dark-input' && 'bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-white focus:ring-white/20',
             loading && 'pr-10',
           )}
         />
@@ -133,15 +136,27 @@ function Autocomplete({
       {isOpen && filteredOptions.length > 0 && !forceClose && (
         <div
           ref={dropdownRef}
-          className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+          className={cn(
+            "absolute z-10 mt-1 w-full border rounded-md shadow-lg max-h-60 overflow-auto",
+            className === 'dark-input'
+              ? 'bg-gray-800 border-gray-700'
+              : 'bg-white border-gray-300'
+          )}
         >
           {filteredOptions.map((option, index) => (
             <div
               key={option.id}
               onClick={() => handleOptionClick(option)}
               className={cn(
-                'px-3 py-2 text-sm cursor-pointer',
-                index === highlightedIndex ? 'bg-blue-100' : 'hover:bg-gray-100',
+                'px-3 py-2 text-sm cursor-pointer text-black',
+                className === 'dark-input' && 'text-white',
+                index === highlightedIndex
+                  ? className === 'dark-input'
+                    ? 'bg-gray-700'
+                    : 'bg-blue-100'
+                  : className === 'dark-input'
+                    ? 'hover:bg-gray-700'
+                    : 'hover:bg-gray-100',
               )}
             >
               {option.label}

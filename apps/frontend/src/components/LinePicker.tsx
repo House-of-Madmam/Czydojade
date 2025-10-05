@@ -26,8 +26,10 @@ const LinePicker: React.FC<{ type?: 'bus' | 'tram'; onSelect: (line: Line) => vo
         value={searchText}
         loading={loading}
         forceClose={searchText.length === 0}
+        placeholder="Wyszukaj linię"
+        className="dark-input"
       />
-      {error && <p className="text-sm text-red-500">Error: {error}</p>}
+      {error && <p className="text-sm text-red-400">Error: {error}</p>}
     </div>
   );
 };

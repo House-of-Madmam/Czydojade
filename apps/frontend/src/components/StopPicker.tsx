@@ -30,8 +30,10 @@ const StopPicker: React.FC<{ radiusMeters?: number; onSelect: (stop: Stop) => vo
         onChange={setSearchText}
         value={searchText}
         loading={loading}
+        placeholder="Wyszukaj przystanek"
+        className="dark-input"
       />
-      {error && <p className="text-sm text-red-500">Error: {error}</p>}
+      {error && <p className="text-sm text-red-400">Error: {error}</p>}
     </div>
   );
 };
