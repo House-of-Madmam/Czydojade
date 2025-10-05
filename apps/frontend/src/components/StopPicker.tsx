@@ -4,7 +4,7 @@ import Autocomplete from './ui/Autocomplete';
 import { useNearbyStops } from '../hooks/useNearbyStops';
 import type { Stop } from '../api/queries/stops';
 
-const StopPicker: React.FC<{ radiusMeters?: number; onSelect: (stop: Stop) => void; value?: string }> = ({ radiusMeters, onSelect }) => {
+const StopPicker: React.FC<{ radiusMeters?: number; onSelect: (stop: Stop | null) => void; value?: string }> = ({ radiusMeters, onSelect }) => {
   const latitude = useAppSelector(state => state.geolocation.latitude);
   const longitude = useAppSelector(state => state.geolocation.longitude);
   const [searchText, setSearchText] = useState('');
@@ -19,6 +19,8 @@ const StopPicker: React.FC<{ radiusMeters?: number; onSelect: (stop: Stop) => vo
     const selectedStop = stops.find(stop => stop.id === option.id);
     if (selectedStop) {
       onSelect(selectedStop);
+    } else {
+      onSelect(null);
     }
   };
 
