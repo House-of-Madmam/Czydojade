@@ -1,16 +1,48 @@
 import { APIProvider } from '@vis.gl/react-google-maps';
 import PublicTransportMap, { RouteInfo, isPointNearRoute } from '../components/PublicTransportMap';
+
+// Import funkcji tłumaczącej typ incydentu
+const getIncidentTypeLabel = (type: string): string => {
+  switch (type) {
+    case 'vehicleBreakdown':
+      return 'Awaria pojazdu';
+    case 'infrastructureBreakdown':
+      return 'Awaria infrastruktury';
+    case 'dangerInsideVehicle':
+      return 'Zagrożenie w pojeździe';
+    default:
+      return type;
+  }
+};
+
+// Funkcja pomocnicza do obliczania odległości między punktami
+const calculateDistance = (point1: google.maps.LatLng, point2: google.maps.LatLng): number => {
+  const R = 6371000; // Promień Ziemi w metrach
+  const lat1Rad = (point1.lat() * Math.PI) / 180;
+  const lat2Rad = (point2.lat() * Math.PI) / 180;
+  const deltaLatRad = ((point2.lat() - point1.lat()) * Math.PI) / 180;
+  const deltaLngRad = ((point2.lng() - point1.lng()) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+    Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLngRad / 2) * Math.sin(deltaLngRad / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+};
 import LocationInput from '../components/LocationInput';
 import IncidentForm from '../components/IncidentForm';
 import { isPointNearInterpolatedRoute, getInterpolatedRoutePoints } from '../utils/polylineUtils';
 import { getStops, getNearbyStops, type Stop } from '../api/queries/getStops';
 import { getIncidentsInView } from '../api/queries/getIncidents';
 import { type IncidentWithVotes } from '../api/types/incident';
+import { useRouteIncidents } from '../hooks/useRouteIncidents';
 import { calculateViewBounds } from '../utils/mapUtils';
 import { config } from '../config';
-import { useState, useCallback, useEffect, useContext } from 'react';
+import { useState, useCallback, useEffect, useContext, useMemo, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { toast } from 'sonner';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,11 +65,104 @@ export default function TravelPage() {
   const [stopsLoading, setStopsLoading] = useState(false);
   const [showStops, setShowStops] = useState(false);
   const [stopsNearRoute, setStopsNearRoute] = useState<Stop[]>([]);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [, setLocationError] = useState<string>('');
   const [showReportModal, setShowReportModal] = useState(false);
   const [incidents, setIncidents] = useState<IncidentWithVotes[]>([]);
   const [showIncidents] = useState(true); // eslint-disable-line @typescript-eslint/no-unused-vars
+
+  // Śledzenie poprzednich incydentów na trasie dla powiadomień
+  const previousRouteIncidentsRef = useRef<string[]>([]);
+
+  // Przygotuj punkty trasy dla monitorowania incydentów
+  const [routePointsForMonitoring, setRoutePointsForMonitoring] = useState<{ lat: number; lng: number }[] | null>(null);
+
+  // Hook do monitorowania incydentów na trasie
+  const {
+    incidents: routeIncidents,
+    loading: routeIncidentsLoading,
+    error: routeIncidentsError,
+    isMonitoring: routeMonitoringActive,
+  } = useRouteIncidents({
+    routePoints: routePointsForMonitoring,
+    routeRadiusMeters: 300, // 300 metrów od trasy
+    enabled: !!routeInfo, // Włącz tylko gdy trasa jest wyznaczona
+    pollingInterval: 10000, // Co 10 sekund
+  });
+
+  // Połącz incydenty z widoku mapy i z monitorowania trasy
+  const allIncidents = useMemo(() => {
+    const combinedIncidents = [...incidents]; // Incydenty z widoku mapy
+
+    // Dodaj incydenty z trasy, unikając duplikatów
+    routeIncidents.forEach(routeIncident => {
+      const existingIndex = combinedIncidents.findIndex(incident => incident.id === routeIncident.id);
+      if (existingIndex === -1) {
+        combinedIncidents.push(routeIncident);
+      } else {
+        // Zaktualizuj istniejący incydent nowszymi danymi
+        combinedIncidents[existingIndex] = routeIncident;
+      }
+    });
+
+    return combinedIncidents;
+  }, [incidents, routeIncidents]);
+
+  // Powiadomienia o nowych incydentach na trasie
+  useEffect(() => {
+    const currentIncidentIds = routeIncidents.map(incident => incident.id);
+    const previousIncidentIds = previousRouteIncidentsRef.current;
+
+    // Znajdź nowe incydenty
+    const newIncidents = routeIncidents.filter(incident =>
+      !previousIncidentIds.includes(incident.id)
+    );
+
+    if (newIncidents.length > 0 && previousIncidentIds.length > 0) {
+      // Sprawdź które nowe incydenty są blisko trasy
+      const routeIncidents = newIncidents.filter(incident => {
+        if (!routePointsForMonitoring) return false;
+
+        const incidentLat = parseFloat(incident.latitude || '0');
+        const incidentLng = parseFloat(incident.longitude || '0');
+
+        if (!incidentLat || !incidentLng) return false;
+
+        // Sprawdź odległość od któregokolwiek punktu na trasie
+        return routePointsForMonitoring.some(point => {
+          const distance = calculateDistance(
+            new google.maps.LatLng(point.lat, point.lng),
+            new google.maps.LatLng(incidentLat, incidentLng)
+          );
+          return distance <= 300; // 300 metrów od trasy
+        });
+      });
+
+      if (routeIncidents.length > 0) {
+        // Pokaż popup o utrudnieniach na trasie
+        const incident = routeIncidents[0]; // Pokaż pierwszy nowy incydent
+        toast.error(`🚧 Utrudnienia na Twojej trasie!`, {
+          description: `${getIncidentTypeLabel(incident.type)} - ${incident.description || 'Szczegóły dostępne na mapie'}`,
+          duration: 10000,
+          action: {
+            label: 'Zobacz na mapie',
+            onClick: () => {
+              // Można dodać scroll do mapy lub highlight markera
+              console.log('Kliknięto "Zobacz na mapie" dla incydentu:', incident.id);
+            },
+          },
+        });
+      }
+
+      // Pokaż również ogólne powiadomienie o nowych incydentach
+      toast.warning(`🚨 Znaleziono ${newIncidents.length} nowy${newIncidents.length === 1 ? '' : 'ch'} incydent${newIncidents.length === 1 ? '' : 'ów'} na Twojej trasie!`, {
+        description: 'Sprawdź szczegóły na mapie',
+        duration: 8000,
+      });
+    }
+
+    previousRouteIncidentsRef.current = currentIncidentIds;
+  }, [routeIncidents, routePointsForMonitoring]);
 
   const handleSearch = () => {
     if (searchOrigin && searchDestination) {
@@ -113,6 +238,37 @@ export default function TravelPage() {
   useEffect(() => {
     loadNearbyStops();
   }, [loadNearbyStops]);
+
+  // Przygotuj interpolowane punkty trasy co 50m dla monitorowania
+  useEffect(() => {
+    const prepareRoutePoints = async () => {
+      if (!routeInfo || !origin || !destination) {
+        setRoutePointsForMonitoring(null);
+        return;
+      }
+
+      try {
+        const result = await getInterpolatedRoutePoints(origin, destination, 50); // Co 50 metrów
+
+        if (result.success && result.points) {
+          const points = result.points.map(point => ({
+            lat: point.lat(),
+            lng: point.lng(),
+          }));
+          setRoutePointsForMonitoring(points);
+          console.log(`📍 Przygotowano ${points.length} punktów trasy co 50m dla monitorowania`);
+        } else {
+          console.warn('⚠️ Nie udało się przygotować punktów trasy dla monitorowania');
+          setRoutePointsForMonitoring(null);
+        }
+      } catch (error) {
+        console.error('❌ Błąd podczas przygotowywania punktów trasy:', error);
+        setRoutePointsForMonitoring(null);
+      }
+    };
+
+    prepareRoutePoints();
+  }, [routeInfo, origin, destination]);
 
   const handleFindStopsNearRoute = useCallback(async () => {
     if (!routeInfo?.polylinePath) return;
@@ -459,7 +615,7 @@ export default function TravelPage() {
                     🎯 Znajdź przystanki w pobliżu trasy
                   </button>
 
-                  <button
+                  {/* <button
                     onClick={() => setShowStops(!showStops)}
                     className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 ${
                       showStops
@@ -468,7 +624,7 @@ export default function TravelPage() {
                     }`}
                   >
                     {showStops ? '👁️' : '🙈'} {showStops ? 'Ukryj' : 'Pokaż'} przystanki ({allStops.length})
-                  </button>
+                  </button> */}
                 </>
               )}
             </div>
@@ -502,7 +658,7 @@ export default function TravelPage() {
             stops={showStops ? allStops : []}
             showStops={showStops}
             stopsNearRoute={stopsNearRoute}
-            incidents={incidents}
+            incidents={allIncidents}
             showIncidents={showIncidents}
             onViewChange={handleViewChange}
           />
@@ -534,6 +690,21 @@ export default function TravelPage() {
                   <span className="ml-2 font-semibold text-blue-400">{routeInfo?.totalDistance}</span>
                 </div>
               </div>
+
+              {/* Route Monitoring Status */}
+              {routeMonitoringActive && (
+                <div className="mt-3 p-2 bg-orange-900/30 border border-orange-700 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${routeIncidentsLoading ? 'bg-orange-400 animate-pulse' : 'bg-green-400'}`}></div>
+                    <span className="text-orange-300">
+                      {routeIncidentsLoading ? 'Sprawdzanie incydentów...' : `Monitorowanie aktywne (${allIncidents.length} incydentów)`}
+                    </span>
+                  </div>
+                  {routeIncidentsError && (
+                    <p className="text-red-300 text-xs mt-1">{routeIncidentsError}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Steps */}
@@ -613,7 +784,7 @@ export default function TravelPage() {
             title="Zgłoś wypadek"
           >
             <AlertTriangle className="w-14 h-14" />
-            <span className="hidden sm:inline">Zgłoś wypadek</span>
+            <span className="hidden sm:inline">Zgłoś zdarzenie</span>
           </Button>
         </div>
       </div>

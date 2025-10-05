@@ -186,7 +186,8 @@ export default function LocationInput({
         />
 
         {/* Geolocation button - pozycjonowany absolutnie w prawym rogu inputa */}
-        {enableGeolocation && latitude !== null && longitude !== null && (
+        {enableGeolocation && latitude !== null && longitude !== null 
+        && (
           <button
             onClick={handleLocationClick}
             disabled={isLoadingStops}
@@ -216,7 +217,8 @@ export default function LocationInput({
               </svg>
             )}
           </button>
-        )}
+        )
+        }
 
         {/* Loading indicator overlay */}
         {isLoadingStops && (

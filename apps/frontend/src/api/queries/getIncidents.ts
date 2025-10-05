@@ -63,3 +63,32 @@ export const getCriticalIncidentsInView = async (
 ): Promise<IncidentWithVotes[]> => {
   return getIncidentsInView(centerLat, centerLng, radiusMeters, IncidentPriority.Critical, true);
 };
+
+// Funkcja do pobierania incydentów na trasie podróży
+export const getIncidentsOnRoute = async (
+  routePoints: { lat: number; lng: number }[],
+  routeRadiusMeters: number = 300,
+  isActive: boolean = true,
+  priority?: IncidentPriority,
+  limit: number = 50
+): Promise<IncidentWithVotes[]> => {
+  try {
+    const requestBody = {
+      routePoints,
+      routeRadiusMeters,
+      isActive,
+      priority,
+      limit,
+    };
+
+    const response = await simpleApiRequest<PaginatedIncidentsResponse>(`/incidents/route`, {
+      method: 'POST',
+      body: requestBody,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Błąd podczas pobierania incydentów na trasie:', error);
+    return [];
+  }
+};

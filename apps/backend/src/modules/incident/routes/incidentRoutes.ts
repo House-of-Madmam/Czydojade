@@ -66,6 +66,11 @@ const voteSchema = Type.Object({
   createdAt: Type.String({ format: 'date-time' }),
 });
 
+const routePointSchema = Type.Object({
+  lat: Type.Number(),
+  lng: Type.Number(),
+});
+
 export async function incidentRoutes(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fastify: FastifyInstance<any, any, any, any, TypeBoxTypeProvider>,
@@ -172,6 +177,41 @@ export async function incidentRoutes(
     },
     handler: async (request, reply) => {
       const result = await findIncidentsAction.execute(request.query);
+
+      return reply.send({
+        data: result.data.map(mapIncidentWithVotesToResponse),
+        total: result.total,
+      });
+    },
+  });
+
+  // POST /incidents/route - incydenty na trasie podróży (geograficzne + na liniach)
+  fastify.post('/incidents/route', {
+    schema: {
+      body: Type.Object({
+        routePoints: Type.Array(routePointSchema, { minItems: 1 }),
+        routeRadiusMeters: Type.Optional(Type.Integer({ minimum: 1, default: 300 })),
+        isActive: Type.Optional(Type.Boolean({ default: true })),
+        priority: Type.Optional(
+          Type.Union([Type.Literal('low'), Type.Literal('medium'), Type.Literal('high'), Type.Literal('critical')]),
+        ),
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 50 })),
+      }),
+      response: {
+        200: paginatedIncidentsSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const { routePoints, routeRadiusMeters, isActive, priority, limit } = request.body;
+
+      const result = await findIncidentsAction.execute({
+        routePoints,
+        routeRadiusMeters,
+        isActive,
+        priority,
+        limit,
+        page: 1, // Always return first page for route monitoring
+      });
 
       return reply.send({
         data: result.data.map(mapIncidentWithVotesToResponse),

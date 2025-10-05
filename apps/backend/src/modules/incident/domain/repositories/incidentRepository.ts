@@ -23,6 +23,8 @@ export interface FindIncidentsFilters {
   readonly radiusMeters?: number | undefined;
   readonly page?: number | undefined;
   readonly limit?: number | undefined;
+  readonly routePoints?: { lat: number; lng: number }[] | undefined;
+  readonly routeRadiusMeters?: number | undefined;
 }
 
 export interface PaginatedIncidents {

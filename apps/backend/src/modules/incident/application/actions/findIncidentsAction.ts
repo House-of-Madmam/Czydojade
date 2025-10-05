@@ -12,6 +12,8 @@ export interface FindIncidentsActionPayload {
   readonly radiusMeters?: number | undefined;
   readonly page?: number | undefined;
   readonly limit?: number | undefined;
+  readonly routePoints?: { lat: number; lng: number }[] | undefined;
+  readonly routeRadiusMeters?: number | undefined;
 }
 
 export class FindIncidentsAction {

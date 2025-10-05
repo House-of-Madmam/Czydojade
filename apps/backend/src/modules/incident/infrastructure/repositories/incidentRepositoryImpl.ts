@@ -1,4 +1,4 @@
-import { and, between, count, eq, gt, lte, sql } from 'drizzle-orm';
+import { and, between, count, eq, gt, lte, or, sql } from 'drizzle-orm';
 
 import { UuidService } from '../../../../common/uuid/uuidService.ts';
 import type { Database } from '../../../../infrastructure/database/database.ts';
@@ -103,6 +103,36 @@ export class IncidentRepositoryImpl implements IncidentRepository {
       conditions.push(between(incidents.longitude, minLon, maxLon));
     }
 
+    // Handle route-based filtering
+    if (filters.routePoints && filters.routePoints.length > 0 && filters.routeRadiusMeters && filters.routeRadiusMeters > 0) {
+      const routeConditions = [];
+
+      for (const point of filters.routePoints) {
+        const lat = point.lat;
+        const lon = point.lng;
+        const radius = filters.routeRadiusMeters;
+        const latDelta = radius / 111_000;
+        const lonDelta = radius / (111_000 * Math.cos((lat * Math.PI) / 180) || 1);
+
+        const minLat = (lat - latDelta).toString();
+        const maxLat = (lat + latDelta).toString();
+        const minLon = (lon - lonDelta).toString();
+        const maxLon = (lon + lonDelta).toString();
+
+        routeConditions.push(
+          and(
+            between(incidents.latitude, minLat, maxLat),
+            between(incidents.longitude, minLon, maxLon)
+          )
+        );
+      }
+
+      // Combine route conditions with OR (incidents near any point on the route)
+      if (routeConditions.length > 0) {
+        conditions.push(or(...routeConditions));
+      }
+    }
+
     const result = await this.database.db
       .select()
       .from(incidents)
@@ -162,6 +192,36 @@ export class IncidentRepositoryImpl implements IncidentRepository {
 
       conditions.push(between(incidents.latitude, minLat, maxLat));
       conditions.push(between(incidents.longitude, minLon, maxLon));
+    }
+
+    // Handle route-based filtering
+    if (filters.routePoints && filters.routePoints.length > 0 && filters.routeRadiusMeters && filters.routeRadiusMeters > 0) {
+      const routeConditions = [];
+
+      for (const point of filters.routePoints) {
+        const lat = point.lat;
+        const lon = point.lng;
+        const radius = filters.routeRadiusMeters;
+        const latDelta = radius / 111_000;
+        const lonDelta = radius / (111_000 * Math.cos((lat * Math.PI) / 180) || 1);
+
+        const minLat = (lat - latDelta).toString();
+        const maxLat = (lat + latDelta).toString();
+        const minLon = (lon - lonDelta).toString();
+        const maxLon = (lon + lonDelta).toString();
+
+        routeConditions.push(
+          and(
+            between(incidents.latitude, minLat, maxLat),
+            between(incidents.longitude, minLon, maxLon)
+          )
+        );
+      }
+
+      // Combine route conditions with OR (incidents near any point on the route)
+      if (routeConditions.length > 0) {
+        conditions.push(or(...routeConditions));
+      }
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
