@@ -34,6 +34,7 @@ interface Props {
 
 export default function IncidentForm({ onSuccess }: Props) {
   const [useLocation, setUseLocation] = useState(true);
+  const [isSubmitted, setIsSubmitted] = useState(false); // Track submission success
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,6 +71,7 @@ export default function IncidentForm({ onSuccess }: Props) {
 
       await reportIncident(sanitizedValues);
 
+      setIsSubmitted(true); // Mark as submitted
       onSuccess?.();
     } catch (error) {
       form.setError('root', {
@@ -213,12 +215,17 @@ export default function IncidentForm({ onSuccess }: Props) {
           <Button
             type="submit"
             className="w-full h-11 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:text-gray-500 font-medium transition-all duration-200 shadow-sm hover:shadow-md mt-6"
-            disabled={!form.formState.isValid || form.formState.isSubmitting}
+            disabled={!form.formState.isValid || form.formState.isSubmitting || isSubmitted} // Disable after submission
           >
             {form.formState.isSubmitting ? 'Submitting...' : 'Report Incident'}
           </Button>
         </form>
       </Form>
+      {isSubmitted && (
+        <div className="text-green-600 text-sm mt-3 text-center bg-green-50 border border-green-200 rounded-lg p-3">
+          Thank you for your report!
+        </div>
+      )}
       {form.formState.errors.root && (
         <div className="text-red-600 text-sm mt-3 text-center bg-red-50 border border-red-200 rounded-lg p-3">
           {form.formState.errors.root.message}
