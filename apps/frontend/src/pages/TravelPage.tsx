@@ -1,7 +1,7 @@
 import { APIProvider } from '@vis.gl/react-google-maps';
 import PublicTransportMap, { RouteInfo, isPointNearRoute } from '../components/PublicTransportMap';
 import { isPointNearInterpolatedRoute, getInterpolatedRoutePoints } from '../utils/polylineUtils';
-import { getStops, type Stop } from '../api/queries/getStops';
+import { getStops, getNearbyStops, searchStopsByName, type Stop } from '../api/queries/getStops';
 import { config } from '../config';
 import { useState, useCallback, useEffect } from 'react';
 
@@ -21,6 +21,8 @@ export default function TravelPage() {
   const [stopsLoading, setStopsLoading] = useState(false);
   const [showStops, setShowStops] = useState(false);
   const [stopsNearRoute, setStopsNearRoute] = useState<Stop[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string>('');
 
   const handleSearch = () => {
     if (searchOrigin && searchDestination) {
@@ -46,63 +48,75 @@ export default function TravelPage() {
     setShowDestinationSuggestions(false);
   };
 
-  // Ładowanie wszystkich przystanków przy starcie (opcjonalne)
-  const loadAllStops = useCallback(async () => {
+  // Ładowanie przystanków w okolicy użytkownika przy starcie
+  const loadNearbyStops = useCallback(async () => {
     try {
       setStopsLoading(true);
-      const result = await getStops({
-        pageSize: 100, // Pobierz więcej przystanków dla lepszego wyszukiwania
+      setLocationError('');
+
+      const nearbyStops = await getNearbyStops(10000, 50); // 10km, max 50 przystanków
+      setAllStops(nearbyStops);
+      setUserLocation({
+        lat: nearbyStops[0]?.latitude || 50.06143, // Kraków jako fallback
+        lng: nearbyStops[0]?.longitude || 19.93658,
       });
-      setAllStops(result.data);
-      console.log(`✅ Załadowano ${result.data.length} przystanków do autouzupełniania`);
+
+      console.log(`✅ Załadowano ${nearbyStops.length} przystanków w okolicy użytkownika`);
     } catch (error) {
-      console.warn('⚠️ Backend niedostępny - autouzupełnianie przystanków wyłączone:', error);
-      console.warn('💡 Uruchom backend komendą: npm run dev w katalogu apps/backend');
-      // Nie ustawiamy błędu - aplikacja działa bez przystanków
-      setAllStops([]); // Pusta tablica, żeby filtry działały
+      console.warn('⚠️ Nie udało się pobrać przystanków w okolicy:', error);
+      setLocationError(error instanceof Error ? error.message : 'Błąd geolokalizacji');
+
+      // Fallback: pobierz wszystkie przystanki bez filtrowania lokalizacji
+      try {
+        const result = await getStops({ pageSize: 100 });
+        setAllStops(result.data);
+        console.log(`✅ Załadowano ${result.data.length} przystanków (fallback)`);
+      } catch (fallbackError) {
+        console.warn('⚠️ Nawet fallback się nie udał:', fallbackError);
+        setAllStops([]);
+      }
     } finally {
       setStopsLoading(false);
     }
   }, []);
 
-  // Filtrowanie sugestii przystanków
-  const filterStops = useCallback((query: string): Stop[] => {
+  // Wyszukiwanie przystanków po nazwie dla autouzupełniania
+  const searchStopsForAutocomplete = useCallback(async (query: string): Promise<Stop[]> => {
     if (!query.trim()) return [];
 
-    const normalizedQuery = query.toLowerCase().trim();
-    return allStops
-      .filter(stop =>
-        stop.name.toLowerCase().includes(normalizedQuery) ||
-        stop.type.toLowerCase().includes(normalizedQuery)
-      )
-      .slice(0, 10); // Maksymalnie 10 sugestii
-  }, [allStops]);
+    try {
+      return await searchStopsByName(query, 10);
+    } catch (error) {
+      console.error('Błąd podczas wyszukiwania przystanków:', error);
+      return [];
+    }
+  }, []);
 
   // Obsługa zmiany tekstu w polu origin
-  const handleOriginChange = useCallback((value: string) => {
+  const handleOriginChange = useCallback(async (value: string) => {
     setSearchOrigin(value);
     if (value.length >= 2) {
-      const suggestions = filterStops(value);
+      const suggestions = await searchStopsForAutocomplete(value);
       setOriginSuggestions(suggestions);
       setShowOriginSuggestions(suggestions.length > 0);
     } else {
       setOriginSuggestions([]);
       setShowOriginSuggestions(false);
     }
-  }, [filterStops]);
+  }, [searchStopsForAutocomplete]);
 
   // Obsługa zmiany tekstu w polu destination
-  const handleDestinationChange = useCallback((value: string) => {
+  const handleDestinationChange = useCallback(async (value: string) => {
     setSearchDestination(value);
     if (value.length >= 2) {
-      const suggestions = filterStops(value);
+      const suggestions = await searchStopsForAutocomplete(value);
       setDestinationSuggestions(suggestions);
       setShowDestinationSuggestions(suggestions.length > 0);
     } else {
       setDestinationSuggestions([]);
       setShowDestinationSuggestions(false);
     }
-  }, [filterStops]);
+  }, [searchStopsForAutocomplete]);
 
   // Wybór sugestii przystanku
   const selectStopSuggestion = useCallback((stop: Stop, field: 'origin' | 'destination') => {
@@ -121,8 +135,8 @@ export default function TravelPage() {
 
   // Ładowanie przystanków przy montowaniu komponentu
   useEffect(() => {
-    loadAllStops();
-  }, [loadAllStops]);
+    loadNearbyStops();
+  }, [loadNearbyStops]);
 
   const handleFindStopsNearRoute = useCallback(async () => {
     if (!routeInfo?.polylinePath) return;
@@ -355,18 +369,32 @@ export default function TravelPage() {
             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-blue-800 text-sm flex items-center gap-2">
                 <span className="animate-spin">⏳</span>
-                Ładowanie przystanków...
+                Pobieranie przystanków w okolicy...
               </p>
             </div>
           )}
 
-          {/* Backend not available warning */}
-          {!stopsLoading && allStops.length === 0 && (
-            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800 text-sm">
-                ⚠️ Backend niedostępny - autouzupełnianie przystanków wyłączone.
+          {/* Location error */}
+          {locationError && (
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-orange-800 text-sm">
+                📍 {locationError}
                 <br />
-                Uruchom backend: <code className="bg-yellow-100 px-1 rounded">cd apps/backend && npm run dev</code>
+                <span className="text-xs">Używam podstawowych danych przystanków.</span>
+              </p>
+            </div>
+          )}
+
+          {/* Success message */}
+          {!stopsLoading && allStops.length > 0 && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 text-sm flex items-center gap-2">
+                ✅ Załadowano {allStops.length} przystanków
+                {userLocation && (
+                  <span className="text-xs">
+                    (okolica: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)})
+                  </span>
+                )}
               </p>
             </div>
           )}

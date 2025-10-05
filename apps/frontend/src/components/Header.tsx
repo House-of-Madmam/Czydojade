@@ -17,12 +17,9 @@ export default function Header() {
         <div className="w-48 flex items-center">
           <Link
             to={'/'}
-            className="flex items-center gap-2"
+            className="flex items-center"
           >
-            <div className="h-9 w-9 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-lg">M</span>
-            </div>
-            <span className="hidden sm:block text-xl font-bold text-slate-800">Czydojade</span>
+            <img src="/logo.svg" alt="CzyDojade Logo" className="h-8 w-48" />
           </Link>
         </div>
 

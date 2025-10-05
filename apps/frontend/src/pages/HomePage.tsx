@@ -13,9 +13,9 @@ export default function HomePage() {
       {/* Content Overlay */}
       <div className="relative z-20 min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-6xl md:text-8xl font-bold text-white mb-6 tracking-tight drop-shadow-2xl">
-            Czydojade
-            </h1>
+          <h1 className="flex items-center justify-center text-6xl md:text-8xl font-bold text-white mb-6 tracking-tight drop-shadow-2xl">
+            <img src="/logo.svg" alt="CzyDojade Logo" className="h-32 md:h-48 w-auto filter brightness-0 invert" />
+          </h1>
           <p className="text-xl md:text-3xl text-white mb-10 font-light drop-shadow-lg">
             Sprawdź czy dojedziesz
           </p>
