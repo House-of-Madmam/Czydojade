@@ -8,6 +8,17 @@ export const initializeGeolocationWatcher = (dispatch: AppDispatch): number | nu
     return null;
   }
 
+  GeolocationService.getCurrentPosition().then((position) => {
+    dispatch(
+      setGeolocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      })
+    );
+  }).catch((error) => {
+    dispatch(setGeolocationError(error.message));
+  });
+
   const watchId = GeolocationService.watchPosition(
     (position: GeolocationPosition) => {
       dispatch(

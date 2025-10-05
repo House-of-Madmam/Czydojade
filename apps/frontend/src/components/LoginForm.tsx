@@ -39,32 +39,32 @@ export default function LoginForm() {
       navigate('/');
     } catch {
       form.setError('root', {
-        message: 'Invalid email or password',
+        message: 'Nieprawidłowy email lub hasło',
       });
     }
   }
 
   return (
-    <div className="px-6">
+    <div className="px-2">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4"
+          className="space-y-5"
         >
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">Email</FormLabel>
+                <FormLabel className="text-sm font-semibold text-white">Email</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="nazwa@domena.pl"
-                    className="h-11 border-gray-200 focus:border-teal-500 focus:ring-teal-500/20 placeholder:text-gray-400"
+                    className="h-12 bg-gray-900/80 border-gray-700 text-white focus:border-white focus:ring-white/30 placeholder:text-gray-500 backdrop-blur-sm transition-all autofill:bg-gray-900 autofill:text-white"
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-300 font-medium" />
               </FormItem>
             )}
           />
@@ -73,20 +73,20 @@ export default function LoginForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
+                <FormLabel className="text-sm font-semibold text-white">Hasło</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
-                      placeholder="Password"
+                      placeholder="Hasło"
                       type={showPassword ? 'text' : 'password'}
-                      className="h-11 border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                      className="h-12 bg-gray-900/80 border-gray-700 text-white focus:border-white focus:ring-white/30 placeholder:text-gray-500 backdrop-blur-sm transition-all autofill:bg-gray-900 autofill:text-white"
                       {...field}
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-white/60 hover:text-white"
                       onClick={() => setShowPassword(!showPassword)}
                       tabIndex={-1}
                     >
@@ -94,22 +94,22 @@ export default function LoginForm() {
                     </Button>
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-300 font-medium" />
               </FormItem>
             )}
           />
 
           <Button
             type="submit"
-            className="w-full h-11 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:text-gray-500 font-medium transition-all duration-200 shadow-sm hover:shadow-md mt-6"
+            className="w-full h-12 bg-white text-black hover:bg-white/90 disabled:bg-white/20 disabled:text-white/40 font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 mt-8"
             disabled={!form.formState.isValid || form.formState.isSubmitting}
           >
-            {form.formState.isSubmitting ? 'Signing in...' : 'Sign In'}
+            {form.formState.isSubmitting ? 'Logowanie...' : 'Zaloguj się'}
           </Button>
         </form>
       </Form>
       {form.formState.errors.root && (
-        <div className="text-red-600 text-sm mt-3 text-center bg-red-50 border border-red-200 rounded-lg p-3">
+        <div className="text-white text-sm mt-4 text-center bg-red-500/20 border border-red-400/60 rounded-lg p-3 backdrop-blur-sm font-medium">
           {form.formState.errors.root.message}
         </div>
       )}
