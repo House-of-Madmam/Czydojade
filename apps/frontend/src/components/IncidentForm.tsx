@@ -21,10 +21,12 @@ const formSchema = z.object({
   type: z.nativeEnum(IncidentType),
   priority: z.nativeEnum(IncidentPriority),
   stopId: z.string().optional(),
-  // if stopId is provided, lineId, latitude and longitude are not used
   lineId: z.string().optional(),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
+}).refine((data) => data.stopId !== '' || data.lineId !== '', {
+  message: 'Incident location must be specified',
+  path: ['stopId', 'lineId'],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -121,7 +123,7 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
                       <FormLabel className="text-white">Linia</FormLabel>
                       <FormControl>
                         <LinePicker
-                          onSelect={(line) => field.onChange(line.id)}
+                          onSelect={(line) => field.onChange(line?.id || '')}
                         />
                       </FormControl>
                       <FormMessage />
@@ -139,7 +141,7 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
                   <FormLabel className="text-white">Przystanek</FormLabel>
                   <FormControl>
                     <StopPicker
-                      onSelect={(stop) => field.onChange(stop.id)}
+                      onSelect={(stop) => field.onChange(stop?.id || '')}
                       radiusMeters={300}
                     />
                   </FormControl>
@@ -237,7 +239,7 @@ export default function IncidentForm({ open = false, onOpenChange, onSuccess }: 
             disabled={!form.formState.isValid || form.formState.isSubmitting || isSubmitted} // Disable after submission
           >
             {form.formState.isSubmitting ? 'Wysyłanie...' : 'Zgłoś wypadek'}
-            </Button>
+          </Button>
           </form>
         </Form>
         {isSubmitted && (

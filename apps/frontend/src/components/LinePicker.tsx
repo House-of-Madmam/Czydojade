@@ -3,7 +3,10 @@ import Autocomplete from './ui/Autocomplete';
 import { useLines } from '../hooks/useLines';
 import type { Line } from '../api/queries/getLines';
 
-const LinePicker: React.FC<{ type?: 'bus' | 'tram'; onSelect: (line: Line) => void; value?: string }> = ({ type, onSelect }) => {
+const LinePicker: React.FC<{ type?: 'bus' | 'tram'; onSelect: (line: Line | null) => void; value?: string }> = ({
+  type,
+  onSelect,
+}) => {
   const [searchText, setSearchText] = useState('');
   const { lines, loading, error } = useLines({
     type,
@@ -11,16 +14,18 @@ const LinePicker: React.FC<{ type?: 'bus' | 'tram'; onSelect: (line: Line) => vo
   });
 
   const handleSelect = (option: { id: string; label: string }) => {
-    const selectedLine = lines.find(line => line.id === option.id);
+    const selectedLine = lines.find((line) => line.id === option.id);
     if (selectedLine) {
       onSelect(selectedLine);
+    } else {
+      onSelect(null);
     }
   };
 
   return (
     <div className="line-picker">
       <Autocomplete
-        options={lines.map(line => ({ id: line.id, label: line.number }))}
+        options={lines.map((line) => ({ id: line.id, label: line.number }))}
         onSelect={handleSelect}
         onChange={setSearchText}
         value={searchText}
